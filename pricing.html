@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Autopitch — Pricing</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #d4a843;
+    --gold-light: #f0c060;
+    --gold-dim: #d4a84322;
+    --bg: #06060f;
+    --bg2: #0a0a18;
+    --bg3: #0d0d1f;
+    --text: #ddd8cc;
+    --muted: #44445a;
+    --border: #1a1a2e;
+    --green: #5aaa8a;
+    --red: #e06c6c;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    overflow-x: hidden;
+    cursor: none;
+    min-height: 100vh;
+  }
+
+  .cursor { position: fixed; width: 12px; height: 12px; background: var(--gold); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); mix-blend-mode: difference; }
+  .cursor-ring { position: fixed; width: 36px; height: 36px; border: 1px solid var(--gold-dim); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(212,168,67,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(212,168,67,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 18px 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(6,6,15,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .nav-logo-mark {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 14px; font-weight: 900; color: var(--bg);
+  }
+  .nav-logo-text { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--gold-light); }
+  .nav-back { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-decoration: none; transition: color 0.2s; cursor: none; }
+  .nav-back:hover { color: var(--gold); }
+
+  /* HERO */
+  .hero {
+    position: relative; z-index: 1;
+    padding: 140px 60px 60px;
+    text-align: center;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 400px;
+    background: radial-gradient(ellipse at top, rgba(212,168,67,0.09) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-tag {
+    font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+    color: var(--gold); border: 1px solid var(--gold-dim);
+    padding: 5px 16px; border-radius: 20px;
+    display: inline-block; margin-bottom: 24px;
+    animation: fadeUp 0.5s ease both;
+  }
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(40px, 6vw, 72px);
+    font-weight: 900; line-height: 1.05;
+    letter-spacing: -2px; margin-bottom: 16px;
+    animation: fadeUp 0.5s 0.1s ease both;
+  }
+  .hero-title .gold {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .hero-sub {
+    font-size: 14px; color: var(--muted); max-width: 480px;
+    margin: 0 auto 12px; line-height: 1.8;
+    animation: fadeUp 0.5s 0.2s ease both;
+  }
+  .hero-dollar {
+    font-size: 13px; color: var(--green);
+    animation: fadeUp 0.5s 0.3s ease both;
+    margin-bottom: 60px;
+  }
+
+  /* PRICING CARDS */
+  .pricing-grid {
+    position: relative; z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 60px 80px;
+  }
+
+  .plan-card {
+    position: relative;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px 28px;
+    transition: transform 0.2s, border-color 0.2s;
+    animation: fadeUp 0.5s ease both;
+  }
+  .plan-card:hover { transform: translateY(-4px); }
+  .plan-card.featured {
+    border-color: var(--gold);
+    background: linear-gradient(180deg, #0f0f20 0%, var(--bg2) 100%);
+  }
+  .plan-card.featured::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; border-radius: 12px 12px 0 0;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  }
+
+  .plan-badge {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: var(--bg); font-size: 10px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    padding: 4px 14px; border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .plan-name {
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 16px;
+  }
+  .plan-price {
+    font-family: 'Playfair Display', serif;
+    font-size: 52px; font-weight: 900;
+    color: var(--text); line-height: 1;
+    margin-bottom: 4px;
+  }
+  .plan-price sup { font-size: 22px; vertical-align: super; color: var(--gold); }
+  .plan-price span { font-size: 16px; color: var(--muted); }
+  .plan-billing { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .plan-day { font-size: 11px; color: var(--green); margin-bottom: 28px; }
+
+  .plan-divider { height: 1px; background: var(--border); margin-bottom: 24px; }
+
+  .plan-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+  .plan-features li {
+    font-size: 12px; color: var(--muted);
+    padding-left: 18px; position: relative; line-height: 1.5;
+  }
+  .plan-features li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+  .plan-features li.no::before { content: '✕'; color: var(--border); }
+  .plan-features li.no { color: #2a2a3a; }
+
+  /* CTA BUTTON */
+  .plan-btn {
+    width: 100%; padding: 14px;
+    border-radius: 7px; border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 1px; cursor: none;
+    transition: all 0.2s;
+  }
+  .plan-btn.primary {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: var(--bg);
+  }
+  .plan-btn.primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .plan-btn.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .plan-btn.secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+  .plan-trial { font-size: 10px; color: var(--muted); text-align: center; margin-top: 10px; }
+
+  /* CHECKOUT MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(6,6,15,0.92);
+    backdrop-filter: blur(8px);
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%; max-width: 480px;
+    margin: 20px;
+    overflow: hidden;
+    animation: modalIn 0.3s ease both;
+  }
+  .modal-header {
+    padding: 28px 32px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: flex-start;
+< truncated lines 225-563 >
+        </button>
+
+        <p class="submit-note">
+          <span>✓ No charge for 30 days.</span> Secured by Stripe. Cancel anytime.<br/>
+          You'll receive a reminder 5 days before your trial ends.
+        </p>
+
+        <div class="card-icons">
+          <div class="card-icon">VISA</div>
+          <div class="card-icon">MC</div>
+          <div class="card-icon">AMEX</div>
+          <div class="card-icon" style="color: var(--green);">🍎 PAY</div>
+          <div class="card-icon" style="color: var(--green);">G PAY</div>
+          <div class="card-icon" style="color: var(--gold);">STRIPE</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Screen -->
+    <div class="success-screen" id="successScreen">
+      <div class="success-icon">⚡</div>
+      <div class="success-title">You're in.</div>
+      <p class="success-sub">
+        Your 30-day free trial has started. No charge until day 31.<br/>
+        Check your email for your login link — your account is being set up now.
+      </p>
+      <button class="success-btn" onclick="closeCheckout()">Go to Autopitch →</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── CURSOR ──────────────────────────────────────────────────────────────────
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+  });
+  (function animateRing() {
+    rx += (mx - rx) * 0.1; ry += (my - ry) * 0.1;
+    ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  })();
+
+  // ── SCROLL REVEAL ───────────────────────────────────────────────────────────
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.style.opacity = '1'; e.target.style.transform = 'translateY(0)'; }
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.plan-card, .faq-item').forEach(el => {
+    el.style.opacity = '0'; el.style.transform = 'translateY(16px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    observer.observe(el);
+  });
+
+  // ── FAQ ─────────────────────────────────────────────────────────────────────
+  function toggleFaq(el) {
+    el.parentElement.classList.toggle('open');
+  }
+
+  // ── STRIPE SETUP ────────────────────────────────────────────────────────────
+  // IMPORTANT: Replace with your actual Stripe publishable key from dashboard.stripe.com
+  const STRIPE_KEY = 'pk_test_YOUR_STRIPE_PUBLISHABLE_KEY_HERE';
+
+  let stripe, elements, cardElement, currentPlan;
+
+  const PLANS = {
+    starter: { name: 'Starter Plan', price: '$0/mo after trial', priceId: 'price_starter_id' },
+    pro:     { name: 'Pro Plan',     price: '$29/mo after trial', priceId: 'price_pro_id' },
+    unlimited: { name: 'Unlimited Plan', price: '$59/mo after trial', priceId: 'price_unlimited_id' }
+  };
+
+  function initStripe() {
+    if (!stripe) {
+      stripe = Stripe(STRIPE_KEY);
+      elements = stripe.elements({
+        appearance: {
+          theme: 'night',
+          variables: {
+            colorPrimary: '#d4a843',
+            colorBackground: '#0d0d1f',
+            colorText: '#ddd8cc',
+            colorDanger: '#e06c6c',
+            fontFamily: 'DM Mono, monospace',
+            borderRadius: '6px',
+          }
+        }
+      });
+
+      cardElement = elements.create('card', {
+        style: {
+          base: {
+            color: '#ddd8cc',
+            fontFamily: 'DM Mono, monospace',
+            fontSize: '13px',
+            '::placeholder': { color: '#44445a' }
+          }
+        }
+      });
+      cardElement.mount('#card-element');
+
+      cardElement.on('focus', () => document.getElementById('card-element').classList.add('focused'));
+      cardElement.on('blur', () => document.getElementById('card-element').classList.remove('focused'));
+      cardElement.on('change', e => {
+        const errEl = document.getElementById('card-errors');
+        errEl.style.display = e.error ? 'block' : 'none';
+        if (e.error) errEl.textContent = e.error.message;
+      });
+
+      // Apple Pay / Google Pay
+      const paymentRequest = stripe.paymentRequest({
+        country: 'US', currency: 'usd',
+        total: { label: 'Autopitch Trial (30 days free)', amount: 0 },
+        requestPayerName: true, requestPayerEmail: true,
+      });
+      const prButton = elements.create('paymentRequestButton', {
+        paymentRequest,
+        style: { paymentRequestButton: { theme: 'dark', height: '44px' } }
+      });
+      paymentRequest.canMakePayment().then(result => {
+        if (result) {
+          prButton.mount('#payment-request-button');
+        } else {
+          document.getElementById('payment-request-button').style.display = 'none';
+          document.getElementById('orDivider').style.display = 'none';
+        }
+      });
+
+      paymentRequest.on('paymentmethod', async (ev) => {
+        showSuccess();
+        ev.complete('success');
+      });
+    }
+  }
+
+  // ── MODAL ───────────────────────────────────────────────────────────────────
+  function openCheckout(plan) {
+    currentPlan = plan;
+    const p = PLANS[plan];
+    document.getElementById('modalPlanName').textContent = p.name;
+    document.getElementById('modalPlanPrice').innerHTML = p.price.replace('/mo', '<span>/mo</span>');
+    document.getElementById('modalOverlay').classList.add('active');
+    document.getElementById('checkoutForm').style.display = 'block';
+    document.getElementById('successScreen').style.display = 'none';
+    document.body.style.overflow = 'hidden';
+    setTimeout(initStripe, 100);
+  }
+
+  function closeCheckout() {
+    document.getElementById('modalOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeCheckout();
+  }
+
+  // ── SUBMIT ──────────────────────────────────────────────────────────────────
+  async function handleSubmit() {
+    const btn = document.getElementById('submitBtn');
+    const firstName = document.getElementById('firstName').value.trim();
+    const lastName = document.getElementById('lastName').value.trim();
+    const email = document.getElementById('emailAddr').value.trim();
+
+    if (!firstName || !email) {
+      const err = document.getElementById('card-errors');
+      err.style.display = 'block';
+      err.textContent = 'Please fill in your name and email.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+
+    try {
+      // In production: call your backend to create a Stripe SetupIntent or Subscription
+      // Your backend creates the customer, attaches the payment method, and starts the trial
+      // Example backend endpoint: POST /api/create-subscription
+      // For now we simulate success after card tokenization
+
+      const { paymentMethod, error } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+        billing_details: { name: `${firstName} ${lastName}`, email }
+      });
+
+      if (error) {
+        const errEl = document.getElementById('card-errors');
+        errEl.style.display = 'block';
+        errEl.textContent = error.message;
+        btn.disabled = false;
+        btn.textContent = 'Start My 30-Day Free Trial →';
+        return;
+      }
+
+      // paymentMethod.id goes to your backend here
+      // await fetch('/api/create-subscription', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ paymentMethodId: paymentMethod.id, email, plan: currentPlan })
+      // });
+
+      console.log('Payment method created:', paymentMethod.id, '| Plan:', currentPlan, '| Email:', email);
+      showSuccess();
+
+    } catch (e) {
+      console.error(e);
+      btn.disabled = false;
+      btn.textContent = 'Start My 30-Day Free Trial →';
+    }
+  }
+
+  function showSuccess() {
+    document.getElementById('checkoutForm').style.display = 'none';
+    document.getElementById('successScreen').style.display = 'block';
+  }
+</script>
+</body>
+</html>
