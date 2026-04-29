@@ -3,261 +3,115 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Autopitch — Apply While You Sleep</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<title>Autopitch — Your Pitch, Automated.</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --gold: #d4a843;
-    --gold-light: #f0c060;
-    --gold-dim: #d4a84344;
-    --bg: #06060f;
-    --bg2: #0a0a18;
-    --bg3: #0d0d1f;
-    --text: #ddd8cc;
-    --muted: #44445a;
-    --border: #1a1a2e;
-    --green: #5aaa8a;
-    --purple: #8a7ad4;
-  }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    overflow-x: hidden;
-    cursor: none;
-  }
-
-  .cursor {
-    position: fixed;
-    width: 12px; height: 12px;
-    background: var(--gold);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9999;
-    transform: translate(-50%, -50%);
-    transition: transform 0.1s;
-    mix-blend-mode: difference;
-  }
-  .cursor-ring {
-    position: fixed;
-    width: 36px; height: 36px;
-    border: 1px solid var(--gold-dim);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9998;
-    transform: translate(-50%, -50%);
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(212,168,67,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(212,168,67,0.03) 1px, transparent 1px);
-    background-size: 60px 60px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* NAV */
-  nav {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    padding: 20px 60px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: linear-gradient(180deg, rgba(6,6,15,0.97) 0%, transparent 100%);
-    backdrop-filter: blur(10px);
-  }
-  .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-  .nav-logo-mark {
-    width: 34px; height: 34px;
-    background: linear-gradient(135deg, var(--gold), var(--gold-light));
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Playfair Display', serif;
-    font-size: 17px; font-weight: 900;
-    color: var(--bg);
-    letter-spacing: -1px;
-  }
-  .nav-logo-text {
-    font-family: 'Playfair Display', serif;
-    font-size: 20px; font-weight: 700;
-    color: var(--gold-light);
-  }
-  .nav-cta {
-    padding: 8px 22px;
-    background: transparent;
-    border: 1px solid var(--gold-dim);
-    border-radius: 4px;
-    color: var(--gold);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: none;
-    transition: all 0.2s;
-    text-decoration: none;
-  }
-  .nav-cta:hover { background: var(--gold-dim); border-color: var(--gold); }
-
-  /* TICKER */
-  .ticker-wrap {
-    overflow: hidden;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: var(--bg2);
-    padding: 11px 0;
-    position: relative;
-    z-index: 1;
-    margin-top: 72px;
-  }
-  .ticker {
-    display: flex;
-    animation: ticker 28s linear infinite;
-    white-space: nowrap;
-  }
-  .ticker-item {
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--muted);
-    padding: 0 28px;
-    border-right: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  .ticker-item span { color: var(--gold); margin-right: 6px; }
-
-  /* HERO */
-  .hero {
-    position: relative;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 80px 60px 80px;
-    text-align: center;
-    z-index: 1;
-    overflow: hidden;
-  }
-  .hero::after {
-    content: '';
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -60%);
-    width: 900px; height: 600px;
-    background: radial-gradient(ellipse at center, rgba(212,168,67,0.08) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .hero-eyebrow {
-    font-size: 10px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: var(--gold);
-    border: 1px solid var(--gold-dim);
-    padding: 6px 18px;
-    border-radius: 20px;
-    display: inline-block;
-    margin-bottom: 28px;
-    animation: fadeUp 0.5s ease both;
-  }
-  .hero-title {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(56px, 9vw, 104px);
-    font-weight: 900;
-    line-height: 0.95;
-    letter-spacing: -3px;
-    margin-bottom: 28px;
-    animation: fadeUp 0.5s 0.1s ease both;
-  }
-  .hero-title .gold {
-    background: linear-gradient(135deg, var(--gold), var(--gold-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .hero-title .dim { color: #2a2a45; }
-
-  .hero-sub {
-    font-size: clamp(13px, 1.8vw, 16px);
-    color: var(--muted);
-    max-width: 520px;
-    line-height: 1.9;
-    margin-bottom: 44px;
-    animation: fadeUp 0.5s 0.2s ease both;
-  }
-
-  /* Tally CTA button */
-  .tally-btn {
-    display: inline-block;
-    padding: 16px 36px;
-    background: linear-gradient(135deg, var(--gold), var(--gold-light));
-    border: none;
-    border-radius: 6px;
-    color: var(--bg);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-decoration: none;
-    cursor: none;
-    transition: opacity 0.2s, transform 0.2s;
-    animation: fadeUp 0.5s 0.3s ease both;
-    margin-bottom: 14px;
-  }
-  .tally-btn:hover { opacity: 0.88; transform: translateY(-1px); }
-
-  .hero-note {
-    font-size: 11px;
-    color: var(--muted);
-    animation: fadeUp 0.5s 0.4s ease both;
-    margin-bottom: 64px;
-  }
-  .hero-note span { color: var(--green); }
-
-  /* Stats */
-  .stats-bar {
-    display: flex;
-    gap: 56px;
-    padding-top: 48px;
-    border-top: 1px solid var(--border);
-    animation: fadeUp 0.5s 0.5s ease both;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .stat { text-align: center; }
-  .stat-num {
-    font-family: 'Playfair Display', serif;
-    font-size: 38px; font-weight: 700;
-    color: var(--gold-light);
-    display: block;
-< truncated lines 244-424 >
-    .steps { grid-template-columns: 1fr 1fr; }
-    .step::after { display: none; }
-    .personas { grid-template-columns: 1fr; }
-    .stats-bar { gap: 28px; }
-    footer { flex-direction: column; gap: 10px; text-align: center; padding: 20px; }
-    .cta-section { padding: 80px 20px; }
-    .hero-title { letter-spacing: -2px; }
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --gold: #d4a843; --gold-light: #f0c060; --gold-dim: #d4a84344;
+  --bg: #06060f; --bg2: #0a0a18; --bg3: #0d0d1f;
+  --text: #ddd8cc; --muted: #44445a; --border: #1a1a2e;
+  --green: #5aaa8a; --white: #ffffff;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; overflow-x: hidden; cursor: none; }
+.cursor { position: fixed; width: 12px; height: 12px; background: var(--gold); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); mix-blend-mode: difference; }
+.cursor-ring { position: fixed; width: 36px; height: 36px; border: 1px solid var(--gold-dim); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); }
+body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(212,168,67,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(212,168,67,0.03) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; z-index: 0; }
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 20px 60px; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(180deg, rgba(6,6,15,0.97) 0%, transparent 100%); backdrop-filter: blur(10px); }
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-logo-mark { width: 34px; height: 34px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 900; color: var(--bg); }
+.nav-logo-text { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--gold-light); }
+.nav-cta { padding: 8px 22px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border: none; border-radius: 4px; color: var(--bg); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: none; transition: all 0.2s; text-decoration: none; font-weight: 700; }
+.nav-cta:hover { opacity: 0.88; }
+.ticker-wrap { overflow: hidden; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--bg2); padding: 11px 0; position: relative; z-index: 1; margin-top: 72px; }
+.ticker { display: flex; animation: ticker 28s linear infinite; white-space: nowrap; }
+.ticker-item { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold-light); padding: 0 28px; border-right: 1px solid var(--border); flex-shrink: 0; }
+.ticker-item span { color: var(--gold); margin-right: 6px; }
+.hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 60px; text-align: center; z-index: 1; overflow: hidden; }
+.hero::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-60%); width: 900px; height: 600px; background: radial-gradient(ellipse at center, rgba(212,168,67,0.08) 0%, transparent 70%); pointer-events: none; }
+.hero-eyebrow { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); border: 1px solid var(--gold-dim); padding: 6px 18px; border-radius: 20px; display: inline-block; margin-bottom: 28px; animation: fadeUp 0.5s ease both; }
+.hero-title { font-family: 'Playfair Display', serif; font-size: clamp(56px, 9vw, 104px); font-weight: 900; line-height: 0.95; letter-spacing: -3px; margin-bottom: 28px; animation: fadeUp 0.5s 0.1s ease both; }
+.hero-title .white { color: #ffffff; }
+.hero-title .gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero-sub { font-family: 'Playfair Display', serif; font-size: clamp(16px, 2vw, 22px); font-style: italic; color: var(--text); max-width: 560px; line-height: 1.7; margin-bottom: 16px; animation: fadeUp 0.5s 0.2s ease both; }
+.hero-sub2 { font-size: 13px; color: var(--muted); max-width: 500px; line-height: 1.8; margin-bottom: 32px; animation: fadeUp 0.5s 0.25s ease both; }
+.founding-banner { background: linear-gradient(135deg, #0d1a0a, #0a1a10); border: 1px solid rgba(90,170,138,0.4); border-radius: 10px; padding: 20px 28px; max-width: 520px; margin-bottom: 32px; animation: fadeUp 0.5s 0.28s ease both; }
+.founding-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--green); margin-bottom: 6px; }
+.founding-desc { font-size: 12px; color: var(--muted); line-height: 1.7; }
+.founding-desc span { color: var(--gold-light); font-weight: 600; }
+.dollar-badge { display: inline-block; background: rgba(90,170,138,0.1); border: 1px solid rgba(90,170,138,0.3); border-radius: 20px; padding: 6px 18px; font-size: 12px; color: var(--green); margin-bottom: 24px; animation: fadeUp 0.5s 0.3s ease both; }
+.cta-btn { display: block; width: fit-content; margin: 0 auto 14px; padding: 18px 40px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border: none; border-radius: 6px; color: var(--bg); font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; text-decoration: none; cursor: none; transition: opacity 0.2s, transform 0.2s; animation: fadeUp 0.5s 0.35s ease both; }
+.cta-btn:hover { opacity: 0.88; transform: translateY(-2px); }
+.hero-note { font-size: 11px; color: var(--muted); animation: fadeUp 0.5s 0.4s ease both; margin-bottom: 64px; }
+.hero-note span { color: var(--green); }
+.stats-bar { display: flex; gap: 56px; padding-top: 48px; border-top: 1px solid var(--border); animation: fadeUp 0.5s 0.5s ease both; flex-wrap: wrap; justify-content: center; }
+.stat { text-align: center; }
+.stat-num { font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 700; color: var(--gold-light); display: block; line-height: 1; margin-bottom: 6px; }
+.stat-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+.section { position: relative; z-index: 1; padding: 100px 60px; max-width: 1160px; margin: 0 auto; }
+.section-tag { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; }
+.section-title { font-family: 'Playfair Display', serif; font-size: clamp(30px, 4vw, 50px); font-weight: 700; line-height: 1.1; margin-bottom: 56px; max-width: 580px; }
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.feature-card { background: var(--bg2); padding: 34px 30px; transition: background 0.2s; }
+.feature-card:hover { background: var(--bg3); }
+.feature-icon { font-size: 26px; margin-bottom: 14px; display: block; }
+.feature-title { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+.feature-desc { font-size: 12px; color: var(--muted); line-height: 1.85; }
+.platforms-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.platform-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px 16px; text-align: center; transition: all 0.2s; }
+.platform-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+.platform-icon { font-size: 24px; margin-bottom: 8px; display: block; }
+.platform-name { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.platform-desc { font-size: 10px; color: var(--muted); line-height: 1.5; }
+.platform-badge { display: inline-block; margin-top: 8px; padding: 2px 8px; border-radius: 10px; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+.platform-badge.job { background: rgba(212,168,67,0.15); color: var(--gold); }
+.platform-badge.ugc { background: rgba(224,106,212,0.15); color: #e07ad4; }
+.platform-badge.both { background: rgba(90,170,138,0.15); color: var(--green); }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.step { position: relative; padding: 28px 24px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; }
+.step::after { content: '→'; position: absolute; right: -14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; z-index: 2; }
+.step:last-child::after { display: none; }
+.step-num { font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 900; color: var(--gold-dim); line-height: 1; margin-bottom: 12px; }
+.step-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+.step-desc { font-size: 11px; color: var(--muted); line-height: 1.75; }
+.personas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.persona { padding: 36px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg2); position: relative; overflow: hidden; }
+.persona::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--gold), transparent); }
+.persona-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+.persona-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 18px; }
+.persona-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.persona-list li { font-size: 12px; color: var(--muted); padding-left: 16px; position: relative; line-height: 1.6; }
+.persona-list li::before { content: '→'; position: absolute; left: 0; color: var(--gold); }
+.cta-section { position: relative; z-index: 1; text-align: center; padding: 120px 60px; overflow: hidden; }
+.cta-section::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 700px; height: 450px; background: radial-gradient(ellipse, rgba(212,168,67,0.09) 0%, transparent 70%); pointer-events: none; }
+.cta-title { font-family: 'Playfair Display', serif; font-size: clamp(36px, 5vw, 68px); font-weight: 900; line-height: 1.05; margin-bottom: 20px; }
+.cta-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.85; }
+footer { position: relative; z-index: 1; border-top: 1px solid var(--border); padding: 28px 60px; display: flex; justify-content: space-between; align-items: center; }
+.footer-brand { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold); }
+.footer-note { font-size: 11px; color: var(--muted); }
+.divider { position: relative; z-index: 1; height: 1px; background: var(--border); max-width: 1160px; margin: 0 auto; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes ticker { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+@media (max-width: 900px) {
+  nav { padding: 16px 20px; }
+  .hero { padding: 60px 20px; }
+  .section { padding: 60px 20px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .platforms-grid { grid-template-columns: 1fr 1fr; }
+  .steps { grid-template-columns: 1fr 1fr; }
+  .step::after { display: none; }
+  .personas { grid-template-columns: 1fr; }
+  .stats-bar { gap: 28px; }
+  footer { flex-direction: column; gap: 10px; text-align: center; padding: 20px; }
+  .cta-section { padding: 80px 20px; }
+  .hero-title { letter-spacing: -2px; }
+}
 </style>
 </head>
 <body>
-
 <div class="cursor" id="cursor"></div>
 <div class="cursor-ring" id="cursorRing"></div>
-
-<!-- NAV -->
 <nav>
   <a href="#" class="nav-logo">
     <div class="nav-logo-mark">AP</div>
@@ -265,8 +119,6 @@
   </a>
   <a href="https://tally.so/r/EkBEJ2" target="_blank" class="nav-cta">Join Waitlist →</a>
 </nav>
-
-<!-- TICKER -->
 <div class="ticker-wrap">
   <div class="ticker">
     <span class="ticker-item"><span>⚡</span>AI-Powered Applications</span>
@@ -274,132 +126,82 @@
     <span class="ticker-item"><span>📧</span>Cold Email Automation</span>
     <span class="ticker-item"><span>💼</span>Tailored Resumes Per Job</span>
     <span class="ticker-item"><span>🌙</span>Apply While You Sleep</span>
-    <span class="ticker-item"><span>🚀</span>500+ Applications a Night</span>
+    <span class="ticker-item"><span>🚀</span>Upwork · LinkedIn · Indeed</span>
+    <span class="ticker-item"><span>🎬</span>UGC · Billo · Trend.io</span>
     <span class="ticker-item"><span>⚡</span>AI-Powered Applications</span>
     <span class="ticker-item"><span>🎯</span>UGC & Brand Deals</span>
     <span class="ticker-item"><span>📧</span>Cold Email Automation</span>
     <span class="ticker-item"><span>💼</span>Tailored Resumes Per Job</span>
     <span class="ticker-item"><span>🌙</span>Apply While You Sleep</span>
-    <span class="ticker-item"><span>🚀</span>500+ Applications a Night</span>
+    <span class="ticker-item"><span>🚀</span>Upwork · LinkedIn · Indeed</span>
+    <span class="ticker-item"><span>🎬</span>UGC · Billo · Trend.io</span>
   </div>
 </div>
-
-<!-- HERO -->
 <section class="hero">
   <div class="hero-eyebrow">Now Accepting Early Access</div>
   <h1 class="hero-title">
-    <span class="dim">Your pitch,</span><br/>
+    <span class="white">Your pitch,</span><br/>
     <span class="gold">automated.</span>
   </h1>
-  <p class="hero-sub">
-    Autopitch finds jobs and brand deals, writes tailored resumes, cover letters, and cold outreach — then sends them while you sleep. Built for job seekers and UGC creators who move at scale.
-  </p>
-
-  <a href="https://tally.so/r/EkBEJ2" target="_blank" class="tally-btn">
-    Join the Waitlist — It's Free →
-  </a>
-
-  <p class="hero-note"><span>✓ Free to join.</span> No credit card. Early access opening soon.</p>
-
+  <p class="hero-sub">Find jobs and brand deals. Apply while you sleep.</p>
+  <p class="hero-sub2">Autopitch searches job boards and UGC platforms, writes tailored resumes, cover letters, and cold emails — then sends them directly to hiring managers and brand contacts overnight.</p>
+  <div class="founding-banner">
+    <div class="founding-title">🏆 Founding Member Offer</div>
+    <div class="founding-desc">First <span>200 members</span> lock in Pro at <span>$29/mo for life</span>. Regular price $59/mo. Join the waitlist to claim your spot.</div>
+  </div>
+  <div class="dollar-badge">✓ Less than a dollar a day</div>
+  <a href="https://tally.so/r/EkBEJ2" target="_blank" class="cta-btn">Join the Waitlist — Claim Your Spot →</a>
+  <p class="hero-note"><span>✓ Free to join.</span> No spam. First 200 lock in Pro for life at $29/mo.</p>
   <div class="stats-bar">
-    <div class="stat">
-      <span class="stat-num">500+</span>
-      <span class="stat-label">Applications / Night</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">2</span>
-      <span class="stat-label">Modes: Jobs & UGC</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">100%</span>
-      <span class="stat-label">AI-Tailored Docs</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">0</span>
-      <span class="stat-label">Manual Effort</span>
-    </div>
+    <div class="stat"><span class="stat-num">$1</span><span class="stat-label">Less Than a Day</span></div>
+    <div class="stat"><span class="stat-num">2</span><span class="stat-label">Modes: Jobs & UGC</span></div>
+    <div class="stat"><span class="stat-num">30</span><span class="stat-label">Day Free Trial</span></div>
+    <div class="stat"><span class="stat-num">0</span><span class="stat-label">Manual Effort</span></div>
   </div>
 </section>
-
 <div class="divider"></div>
-
-<!-- FEATURES -->
 <section class="section">
   <div class="section-tag">What Autopitch Does</div>
   <h2 class="section-title">Everything from search to send — on autopilot.</h2>
-
   <div class="features-grid">
-    <div class="feature-card">
-      <span class="feature-icon">🔍</span>
-      <div class="feature-title">Smart Search & Filters</div>
-      <p class="feature-desc">Filter by remote, hybrid, on-site, salary range, industry, experience level, and job type. Results ranked by match percentage to your profile.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">📄</span>
-      <div class="feature-title">Tailored Resumes</div>
-      <p class="feature-desc">Paste your master resume once. Autopitch rewrites and optimizes it for every single job — ATS-friendly, keyword-matched, relevant experience front and center.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">✍️</span>
-      <div class="feature-title">Cover Letters That Hit</div>
-      <p class="feature-desc">No templates. No generic filler. A unique, personalized cover letter for each opportunity using real details from the job posting.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">📧</span>
-      <div class="feature-title">Cold Email Outreach</div>
-      <p class="feature-desc">Bypasses job portals entirely. Generates and sends cold emails directly to hiring managers and brand contacts — often more effective than portal applications.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">🎯</span>
-      <div class="feature-title">UGC & Brand Deal Mode</div>
-      <p class="feature-desc">For influencers and content creators. Auto-generate pitch emails, media kit summaries, and sponsor outreach for brand deals, ambassadorships, and UGC contracts.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">🌙</span>
-      <div class="feature-title">Overnight Batch Mode</div>
-      <p class="feature-desc">Queue hundreds of opportunities. Hit Process All before bed. Wake up to a full outreach log — resumes written, emails sent, applications queued.</p>
-    </div>
+    <div class="feature-card"><span class="feature-icon">🔍</span><div class="feature-title">Smart Search & Filters</div><p class="feature-desc">Filter by remote, hybrid, on-site, salary range, industry, experience level, and job type. Results ranked by match percentage to your profile.</p></div>
+    <div class="feature-card"><span class="feature-icon">📄</span><div class="feature-title">Tailored Resumes</div><p class="feature-desc">Paste your master resume once. Autopitch rewrites and optimizes it for every single job — ATS-friendly, keyword-matched, relevant experience front and center.</p></div>
+    <div class="feature-card"><span class="feature-icon">✍️</span><div class="feature-title">Cover Letters That Hit</div><p class="feature-desc">No templates. No generic filler. A unique, personalized cover letter for each opportunity using real details from the job posting.</p></div>
+    <div class="feature-card"><span class="feature-icon">📧</span><div class="feature-title">Direct Cold Email Outreach</div><p class="feature-desc">Finds the hiring manager or brand contact's email and sends a personalized cold email directly — bypassing job portals entirely. Higher response rates, no middleman fees.</p></div>
+    <div class="feature-card"><span class="feature-icon">🎯</span><div class="feature-title">UGC & Brand Deal Mode</div><p class="feature-desc">For influencers and content creators. Auto-generate pitch emails, media kit summaries, and sponsor outreach across Upwork, Billo, Trend.io, LinkedIn, and more.</p></div>
+    <div class="feature-card"><span class="feature-icon">🌙</span><div class="feature-title">Overnight Batch Processing</div><p class="feature-desc">Queue opportunities before bed. Hit Process All. Wake up with tailored resumes, personalized emails, and direct outreach already sent. Zero manual effort.</p></div>
   </div>
 </section>
-
 <div class="divider"></div>
-
-<!-- HOW IT WORKS -->
-<section class="section" style="padding-top: 80px;">
+<section class="section" style="padding-top:80px;">
+  <div class="section-tag">Where We Search</div>
+  <h2 class="section-title">Every major platform. One dashboard.</h2>
+  <div class="platforms-grid">
+    <div class="platform-card"><span class="platform-icon">💼</span><div class="platform-name">LinkedIn</div><p class="platform-desc">Jobs, brand deals, ambassador roles</p><span class="platform-badge both">Jobs & UGC</span></div>
+    <div class="platform-card"><span class="platform-icon">🔎</span><div class="platform-name">Indeed</div><p class="platform-desc">Largest job board worldwide</p><span class="platform-badge job">Jobs</span></div>
+    <div class="platform-card"><span class="platform-icon">🏢</span><div class="platform-name">Glassdoor</div><p class="platform-desc">Jobs with salary transparency</p><span class="platform-badge job">Jobs</span></div>
+    <div class="platform-card"><span class="platform-icon">⚡</span><div class="platform-name">ZipRecruiter</div><p class="platform-desc">AI-matched job listings</p><span class="platform-badge job">Jobs</span></div>
+    <div class="platform-card"><span class="platform-icon">🎬</span><div class="platform-name">Upwork</div><p class="platform-desc">UGC contracts, content creation gigs</p><span class="platform-badge ugc">UGC</span></div>
+    <div class="platform-card"><span class="platform-icon">📱</span><div class="platform-name">Billo</div><p class="platform-desc">UGC-specific brand briefs</p><span class="platform-badge ugc">UGC</span></div>
+    <div class="platform-card"><span class="platform-icon">🌟</span><div class="platform-name">Trend.io</div><p class="platform-desc">Paid UGC campaigns from major brands</p><span class="platform-badge ugc">UGC</span></div>
+    <div class="platform-card"><span class="platform-icon">🤝</span><div class="platform-name">JoinBrands</div><p class="platform-desc">Product + payment upfront deals</p><span class="platform-badge ugc">UGC</span></div>
+  </div>
+</section>
+<div class="divider"></div>
+<section class="section" style="padding-top:80px;">
   <div class="section-tag">How It Works</div>
   <h2 class="section-title">Four steps. Then go to sleep.</h2>
-
   <div class="steps">
-    <div class="step">
-      <div class="step-num">01</div>
-      <div class="step-title">Build Your Profile</div>
-      <p class="step-desc">Paste your master resume or creator profile once. Autopitch uses it as the base for everything it generates.</p>
-    </div>
-    <div class="step">
-      <div class="step-num">02</div>
-      <div class="step-title">Search & Filter</div>
-      <p class="step-desc">Set your filters — remote, salary, industry, niche, audience size. Get a ranked list of matching opportunities instantly.</p>
-    </div>
-    <div class="step">
-      <div class="step-num">03</div>
-      <div class="step-title">Queue It Up</div>
-      <p class="step-desc">Add any opportunity to your queue with one click. Add all of them at once. No limit on how many you stack.</p>
-    </div>
-    <div class="step">
-      <div class="step-num">04</div>
-      <div class="step-title">Process & Send</div>
-      <p class="step-desc">Hit Process All. Tailored docs and cold emails generate for every item. Wake up with hundreds of pitches out the door.</p>
-    </div>
+    <div class="step"><div class="step-num">01</div><div class="step-title">Build Your Profile</div><p class="step-desc">Paste your master resume or creator profile once. Autopitch uses it as the base for everything it generates.</p></div>
+    <div class="step"><div class="step-num">02</div><div class="step-title">Search & Filter</div><p class="step-desc">Set your filters — remote, salary, industry, niche, platform. Get a ranked list of matching opportunities across every major board.</p></div>
+    <div class="step"><div class="step-num">03</div><div class="step-title">Queue It Up</div><p class="step-desc">Add any opportunity to your queue with one click. Add all of them at once. No limit on how many you stack.</p></div>
+    <div class="step"><div class="step-num">04</div><div class="step-title">Process & Send</div><p class="step-desc">Hit Process All. Tailored docs and cold emails go out to real hiring managers and brand contacts. Wake up to responses.</p></div>
   </div>
 </section>
-
 <div class="divider"></div>
-
-<!-- WHO IT'S FOR -->
-<section class="section" style="padding-top: 80px;">
+<section class="section" style="padding-top:80px;">
   <div class="section-tag">Who It's For</div>
   <h2 class="section-title">Two modes. One engine.</h2>
-
   <div class="personas">
     <div class="persona">
       <div class="persona-label">Mode 01 — Job Seekers</div>
@@ -409,7 +211,7 @@
         <li>Executive and director-level job searches</li>
         <li>Career pivoters entering a new industry</li>
         <li>Anyone tired of customizing applications one by one</li>
-        <li>People who want 10x the volume with 10x less effort</li>
+        <li>People who want targeted outreach with zero manual effort</li>
       </ul>
     </div>
     <div class="persona">
@@ -419,68 +221,36 @@
         <li>UGC creators pitching sponsored content contracts</li>
         <li>Influencers building brand ambassador relationships</li>
         <li>Athletes and NIL creators monetizing their audience</li>
-        <li>Nano to macro creators — any audience size</li>
+        <li>Creators who want to go direct — bypassing platform fees</li>
         <li>Agencies managing multiple creators at scale</li>
       </ul>
     </div>
   </div>
 </section>
-
-<!-- CTA -->
-<section class="cta-section" id="waitlist">
-  <div class="section-tag" style="margin-bottom: 16px;">Early Access</div>
+<section class="cta-section">
+  <div class="section-tag" style="margin-bottom:16px;">Early Access</div>
   <h2 class="cta-title">Stop pitching<br/>one at a time.</h2>
-  <p class="cta-sub">
-    Join the waitlist and be first in when Autopitch opens. Free tier available at launch. Takes 30 seconds to sign up.
-  </p>
-  <a href="https://tally.so/r/EkBEJ2" target="_blank" class="tally-btn" style="animation: none;">
-    Join the Waitlist — It's Free →
-  </a>
-  <p class="hero-note" style="margin-top: 14px; animation: none;"><span>✓ Free to join.</span> No spam. No credit card required.</p>
+  <p class="cta-sub">Join the waitlist. First 200 founding members lock in Pro at $29/mo for life. Regular price $59/mo.</p>
+  <div class="founding-banner" style="margin: 0 auto 24px; animation: none;">
+    <div class="founding-title">🏆 Founding Member Offer</div>
+    <div class="founding-desc">First <span>200 members</span> lock in Pro at <span>$29/mo for life.</span> Regular price $59/mo. Never goes up.</div>
+  </div>
+  <a href="https://tally.so/r/EkBEJ2" target="_blank" class="cta-btn" style="animation:none;">Join the Waitlist — Claim Your Spot →</a>
+  <p class="hero-note" style="margin-top:14px;animation:none;"><span>✓ Free to join.</span> No spam. No credit card required to join the waitlist.</p>
 </section>
-
-<!-- FOOTER -->
 <footer>
   <div class="footer-brand">Autopitch</div>
   <div class="footer-note">© 2026 Autopitch. All rights reserved.</div>
-  <div class="footer-note" style="color: var(--gold);">⚡ Your pitch, automated.</div>
+  <div class="footer-note" style="color:var(--gold);">⚡ Your pitch, automated.</div>
 </footer>
-
 <script>
-  // Custom cursor
   const cursor = document.getElementById('cursor');
   const ring = document.getElementById('cursorRing');
-  let mx = 0, my = 0, rx = 0, ry = 0;
-  document.addEventListener('mousemove', e => {
-    mx = e.clientX; my = e.clientY;
-    cursor.style.left = mx + 'px';
-    cursor.style.top = my + 'px';
-  });
-  function animateRing() {
-    rx += (mx - rx) * 0.1;
-    ry += (my - ry) * 0.1;
-    ring.style.left = rx + 'px';
-    ring.style.top = ry + 'px';
-    requestAnimationFrame(animateRing);
-  }
-  animateRing();
-
-  // Scroll reveal
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.style.opacity = '1';
-        e.target.style.transform = 'translateY(0)';
-      }
-    });
-  }, { threshold: 0.08 });
-
-  document.querySelectorAll('.feature-card, .step, .persona').forEach(el => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(18px)';
-    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-    observer.observe(el);
-  });
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx+'px';cursor.style.top=my+'px';});
+  (function animRing(){rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animRing);})();
+  const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)';}});},{threshold:0.08});
+  document.querySelectorAll('.feature-card,.step,.persona,.platform-card').forEach(el=>{el.style.opacity='0';el.style.transform='translateY(18px)';el.style.transition='opacity 0.5s ease,transform 0.5s ease';observer.observe(el);});
 </script>
 </body>
 </html>
