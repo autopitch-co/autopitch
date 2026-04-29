@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Autopitch — App</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--gold:#d4a843;--gold-light:#f0c060;--gold-dim:#d4a84344;--bg:#06060f;--bg2:#0a0a18;--bg3:#0d0d1f;--text:#ddd8cc;--muted:#ddd8cc;--border:#1a1a2e;--green:#5aaa8a;--purple:#8a7ad4;--pink:#e07ad4;}
+html,body,#root{height:100%;background:#06060f;color:#ddd8cc;font-family:'DM Mono',monospace;}
+body{overflow-x:hidden;position:relative;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(212,168,67,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(212,168,67,0.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0;}
+#root{position:relative;z-index:1;}
+input,textarea,select{background:#0d0d1f!important;color:#ddd8cc!important;border:1px solid #1a1a2e!important;font-family:'DM Mono',monospace!important;}
+input::placeholder,textarea::placeholder{color:#2a2a40!important;}
+input:focus,textarea:focus{outline:none!important;border-color:#d4a84366!important;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#06060f;}
+::-webkit-scrollbar-thumb{background:#1a1a2e;border-radius:2px;}
+::-webkit-scrollbar-thumb:hover{background:#d4a84344;}
+div,span,p,label,input,textarea,select,button,a,pre,h1,h2,h3,h4{color:inherit;}
+.app-text{color:#ddd8cc;}
+input,textarea{color:#ddd8cc!important;caret-color:#d4a843;}
+input::placeholder,textarea::placeholder{color:#2a2a4a!important;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useCallback, useEffect } = React;
+
+const MODES = { JOB: "job", UGC: "ugc", TALENT: "talent" };
+const VIEWS = { SEARCH: "search", PROFILE: "profile", QUEUE: "queue", OUTREACH: "outreach" };
+const WORK_TYPES = ["Remote", "Hybrid", "On-Site"];
+const JOB_TYPES = ["Full-Time", "Part-Time", "Contract", "Freelance"];
+const INDUSTRIES = ["Sports & NIL", "Real Estate", "Business Development", "Marketing", "Media & Entertainment", "Finance", "Tech", "Consulting"];
+const UGC_NICHES = ["Lifestyle", "Sports & Fitness", "Tech & Gadgets", "Fashion & Beauty", "Food & Travel", "Gaming", "Finance", "Automotive", "Health & Wellness"];
+const CASTING_TYPES = ["Film", "TV", "Commercial", "Theater", "Voice Acting", "Modeling", "Music Video", "Digital"];
+
+// ── API CALLS ─────────────────────────────────────────────────────────────────
+
+const searchJobs = async (filters, mode) => {
+  try {
+    let query = filters.keywords || "jobs";
+    if (mode === MODES.UGC) query = `UGC creator ${filters.keywords || "brand deals content creator"}`;
+    if (mode === MODES.TALENT) query = `casting ${filters.keywords || "actor actress talent audition"}`;
+    const params = new URLSearchParams({
+      query, location: filters.location || "United States",
+      remote: filters.workType.includes("Remote") ? "true" : "false",
+      date_posted: "month", page: "1"
+    });
+    if (filters.jobType.length) params.append("employment_type", filters.jobType[0].toUpperCase().replace("-","_"));
+    
+    console.log("Searching:", `/api/search-jobs?${params.toString()}`);
+    const res = await fetch(`/api/search-jobs?${params.toString()}`);
+    console.log("Response status:", res.status);
+    
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("API error:", errText);
+      throw new Error(`API returned ${res.status}: ${errText}`);
+    }
+    
+    const data = await res.json();
+    console.log("Search data:", data);
+    
+    if (!data.success) throw new Error(data.error || "Search failed");
+    return data.jobs || [];
+  } catch (err) { 
+    console.error("Search error:", err); 
+    alert("Search error: " + err.message + "\n\nCheck browser console for details.");
+    return []; 
+  }
+};
+
+const findEmail = async (company, domain) => {
+  try {
+    const params = new URLSearchParams({ company, domain: domain || "" });
+    const res = await fetch(`/api/find-email?${params.toString()}`);
+    const data = await res.json();
+    if (!data.success) return null;
+    return data.decisionMakers?.[0] || null;
+  } catch (err) { return null; }
+};
+
+const findContact = async (company, mode) => {
+  try {
+    const res = await fetch("/api/find-contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company, mode })
+    });
+    const data = await res.json();
+    if (!data.success) return null;
+    return data.contact || null;
+  } catch (err) { return null; }
+};
+
+const generateDocs = async (job, profile, mode) => {
+  const sysMap = {
+    talent: "You are an elite talent agent. Given an actor profile and casting opportunity, output ONLY JSON with keys 'submission' (tailored actor submission) and 'pitchEmail' (direct email to casting director). No markdown fences.",
+    ugc: "You are a top UGC talent manager. Given a creator profile and brand opportunity, output ONLY JSON with keys 'pitchEmail' (brand pitch email) and 'mediaKitSummary' (3-sentence creator highlight). No markdown fences.",
+    job: "You are an elite career strategist. Given a resume and job, output ONLY JSON with keys 'resume' (tailored resume) and 'coverLetter' (compelling cover letter). No markdown fences."
+  };
+  const userMap = {
+    talent: `ACTOR PROFILE:\nName: ${profile.name}\nUnion: ${profile.union}\nBio: ${profile.bio}\nResume: ${profile.actingResume}\n\nROLE:\n${job.title} at ${job.company}\n${job.description}`,
+    ugc: `CREATOR PROFILE:\nName: ${profile.name}\nBio: ${profile.bio}\nRate: ${profile.rate}\nStats: ${profile.mediaKit}\n\nOPPORTUNITY:\n${job.title} at ${job.company}\n${job.description}`,
+    job: `RESUME:\n${profile.resume}\n\nJOB:\n${job.title} at ${job.company}\n${job.description}`
+  };
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514", max_tokens: 1000,
+        system: sysMap[mode] || sysMap.job,
+        messages: [{ role: "user", content: userMap[mode] || userMap.job }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.map(b => b.text || "").join("").trim();
+    const clean = raw.replace(/```json|```/g, "").trim();
+    return JSON.parse(clean);
+  } catch (err) { console.error("Generate docs error:", err); return null; }
+};
+
+// ── CHIP COMPONENT ────────────────────────────────────────────────────────────
+function Chip({ label, options, selected, onToggle, color = "#d4a843" }) {
+  return (
+    <div>
+      <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>{label}</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:"4px"}}>
+        {options.map(o => (
+          <span key={o} onClick={() => onToggle(o)} style={{
+            padding:"3px 8px",borderRadius:"20px",
+            border:`1px solid ${selected.includes(o) ? color : "#1a1a2e"}`,
+            background: selected.includes(o) ? color+"18" : "transparent",
+            color: selected.includes(o) ? color : "#8888aa",
+            fontSize:"10px",cursor:"pointer",transition:"all 0.15s"
+          }}>{o}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+function App() {
+  const [mode, setMode] = useState(MODES.JOB);
+  const [view, setView] = useState(VIEWS.SEARCH);
+  const [profile, setProfile] = useState({ name:"", email:"", resume:"", bio:"", handle:"", rate:"", mediaKit:"", actingResume:"", union:"" });
+  const [filters, setFilters] = useState({ keywords:"", location:"", workType:[], jobType:[], industry:[], castingType:[] });
+  const toggleFilter = (key, val) => setFilters(f => ({ ...f, [key]: f[key].includes(val) ? f[key].filter(x=>x!==val) : [...f[key], val] }));
+
+  const [jobs, setJobs] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [queue, setQueue] = useState([]);
+  const [outreach, setOutreach] = useState([]);
+  const [generatedDocs, setGeneratedDocs] = useState({});
+  const [generating, setGenerating] = useState({});
+  const [findingEmail, setFindingEmail] = useState({});
+  const [processing, setProcessing] = useState(false);
+  const [processLog, setProcessLog] = useState([]);
+  const [copyMsg, setCopyMsg] = useState({});
+
+  const modeColor = mode === MODES.JOB ? "#d4a843" : mode === MODES.UGC ? "#e07ad4" : "#8a7ad4";
+  const log = (msg, type="info") => setProcessLog(p => [...p, { msg, type, time: new Date().toLocaleTimeString() }]);
+
+  const runSearch = async () => {
+    setSearching(true); setSelectedJob(null); setJobs([]);
+    const results = await searchJobs(filters, mode);
+    setJobs(results); setSearching(false);
+  };
+
+  const handleFindEmail = async (job) => {
+    setFindingEmail(f => ({ ...f, [job.id]: true }));
+    let contact = await findEmail(job.company, job.companyDomain);
+    if (!contact) contact = await findContact(job.company, mode);
+    if (contact) {
+      const update = { ...job, contact: contact.email || contact.raw, contactName: contact.name || "", contactTitle: contact.title || "" };
+      setJobs(j => j.map(jj => jj.id === job.id ? update : jj));
+      setSelectedJob(s => s?.id === job.id ? update : s);
+    }
+    setFindingEmail(f => ({ ...f, [job.id]: false }));
+  };
+
+  const handleGenerateDocs = async (job) => {
+    setGenerating(g => ({ ...g, [job.id]: true }));
+    const docs = await generateDocs(job, profile, mode);
+    if (docs) setGeneratedDocs(d => ({ ...d, [job.id]: docs }));
+    setGenerating(g => ({ ...g, [job.id]: false }));
+  };
+
+  const addToQueue = (job) => {
+    if (!queue.find(q => q.id === job.id)) setQueue(q => [...q, { ...job, status: "pending" }]);
+  };
+
+  const processQueue = async () => {
+    if (!queue.length) return;
+    setProcessing(true); setProcessLog([]);
+    log(`Starting batch — ${queue.length} opportunities`, "start");
+    for (let i = 0; i < queue.length; i++) {
+      const job = queue[i];
+      log(`[${i+1}/${queue.length}] Processing: ${job.title} @ ${job.company}`, "info");
+      setQueue(q => q.map(j => j.id === job.id ? { ...j, status: "processing" } : j));
+      try {
+        let updatedJob = { ...job };
+        if (!job.contact) {
+          log(`Finding contact for ${job.company}...`, "info");
+          let contact = await findEmail(job.company, job.companyDomain);
+          if (!contact) contact = await findContact(job.company, mode);
+          if (contact) { updatedJob.contact = contact.email || contact.raw; updatedJob.contactName = contact.name || ""; }
+        }
+        log(`Generating tailored documents...`, "info");
+        const docs = await generateDocs(updatedJob, profile, mode);
+        if (docs) {
+          setGeneratedDocs(d => ({ ...d, [job.id]: docs }));
+          setOutreach(o => [...o, { id: job.id, job: job.title, company: job.company, contact: updatedJob.contact || "No email found", contactName: updatedJob.contactName || "", docs, date: new Date().toLocaleDateString() }]);
+          setQueue(q => q.map(j => j.id === job.id ? { ...j, status: "done", contact: updatedJob.contact } : j));
+          log(`Done`, "success");
+        }
+        await new Promise(r => setTimeout(r, 800));
+      } catch(e) {
+        log(`Failed: ${job.title}`, "error");
+        setQueue(q => q.map(j => j.id === job.id ? { ...j, status: "failed" } : j));
+      }
+    }
+    log(`Batch complete`, "start"); setProcessing(false);
+  };
+
+  const copy = async (text, key) => {
+    await navigator.clipboard.writeText(text);
+    setCopyMsg(m => ({ ...m, [key]: true }));
+    setTimeout(() => setCopyMsg(m => ({ ...m, [key]: false })), 1800);
+  };
+
+  const docKeys = mode === MODES.TALENT
+    ? [{ k:"submission", label:"Actor Submission" }, { k:"pitchEmail", label:"Casting Director Pitch" }]
+    : mode === MODES.UGC
+    ? [{ k:"pitchEmail", label:"Brand Pitch Email" }, { k:"mediaKitSummary", label:"Media Kit Summary" }]
+    : [{ k:"resume", label:"Tailored Resume" }, { k:"coverLetter", label:"Cover Letter" }];
+
+  const btn = (v="primary", extra={}) => ({
+    padding: v==="sm" ? "4px 10px" : "9px 18px",
+    background: v==="primary" ? "linear-gradient(135deg,#d4a843,#f0c060)" : "transparent",
+    border: v==="primary" ? "none" : "1px solid #1a1a2e",
+    borderRadius:"5px", color: v==="primary" ? "#06060f" : "#ddd8cc",
+    fontSize: v==="sm" ? "10px" : "12px", fontWeight: v==="primary" ? "800" : "600",
+    cursor:"pointer", fontFamily:"inherit", transition:"all 0.15s", ...extra
+  });
+
+  const badge = (color) => ({ padding:"2px 7px", borderRadius:"3px", fontSize:"9px", fontWeight:"700", letterSpacing:"1px", background:color+"22", color, border:`1px solid ${color}44` });
+
+  const spinner = { width:18, height:18, border:"2px solid #1a1a2e", borderTop:"2px solid #d4a843", borderRadius:"50%", animation:"spin 0.8s linear infinite", display:"inline-block" };
+
+  return (
+    <div style={{minHeight:"100vh",background:"#06060f",color:"#ddd8cc",fontFamily:"'DM Mono',monospace",display:"flex",flexDirection:"column"}}>
+
+      {/* HEADER */}
+      <div style={{background:"linear-gradient(135deg,#d4a843,#b88a2a)",borderBottom:"1px solid #d4a84366",padding:"12px 20px",display:"flex",alignItems:"center",gap:"12px"}}>
+        <div style={{width:34,height:34,background:"#06060f",borderRadius:"7px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"15px",fontWeight:"900",color:"#f0c060",fontFamily:"'Playfair Display',serif"}}>AP</div>
+        <div>
+          <div style={{fontSize:"18px",fontWeight:"900",color:"#06060f",fontFamily:"'Playfair Display',serif",letterSpacing:"-0.5px"}}>Autopitch</div>
+          <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"3px",textTransform:"uppercase"}}>AI Application Engine</div>
+        </div>
+        <div style={{display:"flex",gap:"5px",marginLeft:"12px"}}>
+          {[{m:MODES.JOB,label:"💼 Jobs",color:"#d4a843"},{m:MODES.UGC,label:"🎯 UGC",color:"#e07ad4"},{m:MODES.TALENT,label:"🎬 Casting",color:"#8a7ad4"}].map(({m,label,color}) => (
+            <button key={m} onClick={() => { setMode(m); setJobs([]); setSelectedJob(null); }} style={{
+              padding:"5px 12px",borderRadius:"5px",
+              border:`1px solid ${mode===m ? color : "#1a1a2e"}`,
+              background: mode===m ? color+"18" : "transparent",
+              color: mode===m ? color : "#8888aa",
+              fontSize:"11px",fontWeight:"700",cursor:"pointer",fontFamily:"inherit"
+            }}>{label}</button>
+          ))}
+        </div>
+        {queue.length > 0 && <div style={{marginLeft:"auto",background:"#d4a84322",border:"1px solid #d4a843",borderRadius:"20px",padding:"3px 12px",fontSize:"11px",color:"#d4a843",fontWeight:"700"}}>{queue.length} queued</div>}
+      </div>
+
+      {/* NAV */}
+      <div style={{display:"flex",background:"#0a0a18",borderBottom:"1px solid #1a1a2e",padding:"0 20px"}}>
+        {[{v:VIEWS.SEARCH,label:"Search"},{v:VIEWS.PROFILE,label:"Profile"},{v:VIEWS.QUEUE,label:`Queue (${queue.length})`},{v:VIEWS.OUTREACH,label:`Outreach (${outreach.length})`}].map(n => (
+          <button key={n.v} onClick={() => setView(n.v)} style={{
+            padding:"10px 16px",background:"none",border:"none",
+            borderBottom:`2px solid ${view===n.v ? "#d4a843" : "transparent"}`,
+            color: view===n.v ? "#d4a843" : "#8888aa",
+            fontSize:"10px",fontWeight:"700",letterSpacing:"1.5px",textTransform:"uppercase",
+            cursor:"pointer",fontFamily:"inherit"
+          }}>{n.label}</button>
+        ))}
+      </div>
+
+      <div style={{display:"flex",flex:1,overflow:"hidden"}}>
+
+        {/* ── SEARCH ── */}
+        {view === VIEWS.SEARCH && <>
+          {/* Sidebar */}
+          <div style={{width:"240px",minWidth:"240px",background:"#0a0a18",borderRight:"1px solid #1a1a2e",padding:"14px",overflowY:"auto"}}>
+            <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"10px"}}>Filters</div>
+            <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"10px"}}>Keywords</div>
+            <input style={{width:"100%",padding:"7px 10px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}
+              placeholder={mode===MODES.TALENT?"actor, commercial...":mode===MODES.UGC?"fitness, UGC, creator...":"NIL, BD, marketing..."}
+              value={filters.keywords} onChange={e => setFilters(f=>({...f,keywords:e.target.value}))}
+              onKeyDown={e => e.key==="Enter" && runSearch()}
+            />
+            {mode === MODES.JOB && <>
+              <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Location</div>
+              <input style={{width:"100%",padding:"7px 10px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}
+                placeholder="City, State or Remote" value={filters.location} onChange={e => setFilters(f=>({...f,location:e.target.value}))} />
+              <Chip label="Work Type" options={WORK_TYPES} selected={filters.workType} onToggle={v=>toggleFilter("workType",v)} color="#5aaa8a"/>
+              <Chip label="Job Type" options={JOB_TYPES} selected={filters.jobType} onToggle={v=>toggleFilter("jobType",v)}/>
+              <Chip label="Industry" options={INDUSTRIES} selected={filters.industry} onToggle={v=>toggleFilter("industry",v)} color="#d4a843"/>
+            </>}
+            {mode === MODES.UGC && <Chip label="Niche" options={UGC_NICHES} selected={filters.industry} onToggle={v=>toggleFilter("industry",v)} color="#e07ad4"/>}
+            {mode === MODES.TALENT && <Chip label="Casting Type" options={CASTING_TYPES} selected={filters.castingType} onToggle={v=>toggleFilter("castingType",v)} color="#8a7ad4"/>}
+            <div style={{marginTop:"16px"}}>
+              <button style={{...btn("primary"),width:"100%",marginBottom:"6px"}} onClick={runSearch} disabled={searching}>
+                {searching ? "Searching..." : `Search ${mode===MODES.TALENT?"Castings":mode===MODES.UGC?"Brand Deals":"Jobs"}`}
+              </button>
+              {jobs.length > 0 && (
+                <button style={{...btn(),width:"100%",fontSize:"10px"}} onClick={() => { const ids=new Set(queue.map(j=>j.id)); setQueue(q=>[...q,...jobs.filter(j=>!ids.has(j.id)).map(j=>({...j,status:"pending"}))]); }}>
+                  + Add All to Queue
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Results List */}
+          <div style={{width:"280px",minWidth:"280px",overflowY:"auto",padding:"14px",borderRight:"1px solid #1a1a2e"}}>
+            {searching ? (
+              <div style={{textAlign:"center",padding:"60px 0",color:"#ddd8cc"}}>
+                <div style={{...spinner,margin:"0 auto 10px"}}/>
+                <div style={{fontSize:"11px",animation:"pulse 1.5s infinite"}}>Searching live listings...</div>
+              </div>
+            ) : jobs.length === 0 ? (
+              <div style={{textAlign:"center",padding:"60px 0",color:"#ddd8cc",fontSize:"12px"}}>Set filters and search</div>
+            ) : <>
+              <div style={{fontSize:"9px",color:"#ddd8cc",marginBottom:"10px",letterSpacing:"1px"}}>{jobs.length} LIVE RESULTS</div>
+              {jobs.map(job => (
+                <div key={job.id} onClick={() => setSelectedJob(job)} style={{
+                  background: selectedJob?.id===job.id ? "#0d0d1f" : "#0a0a12",
+                  border:`1px solid ${selectedJob?.id===job.id ? modeColor : "#1a1a2e"}`,
+                  borderRadius:"7px",padding:"12px",marginBottom:"8px",cursor:"pointer",transition:"all 0.2s"
+                }}>
+                  <div style={{fontSize:"12px",fontWeight:"700",color:"#ddd8cc",marginBottom:"2px",lineHeight:"1.3"}}>{job.title}</div>
+                  <div style={{fontSize:"11px",color:"#ddd8cc",marginBottom:"6px"}}>{job.company}</div>
+                  <div style={{display:"flex",gap:"4px",flexWrap:"wrap"}}>
+                    {job.remote && <span style={badge("#5aaa8a")}>Remote</span>}
+                    <span style={badge(modeColor)}>{job.type||"Full-Time"}</span>
+                    {job.salary && job.salary!=="Not specified" && <span style={{fontSize:"9px",color:"#ddd8cc"}}>{job.salary}</span>}
+                  </div>
+                  {job.source && <div style={{fontSize:"9px",color:"#ddd8cc",marginTop:"3px"}}>via {job.source}</div>}
+                  {queue.find(q=>q.id===job.id) && <div style={{fontSize:"9px",color:"#d4a843",marginTop:"3px"}}>✓ Queued</div>}
+                </div>
+              ))}
+            </>}
+          </div>
+
+          {/* Detail Panel */}
+          <div style={{flex:1,overflowY:"auto",padding:"20px"}}>
+            {!selectedJob ? (
+              <div style={{textAlign:"center",padding:"80px 0",color:"#ddd8cc",fontSize:"12px"}}>Select an opportunity</div>
+            ) : <>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px",flexWrap:"wrap",gap:"10px"}}>
+                <div>
+                  <h2 style={{margin:"0 0 4px",fontSize:"18px",color:"#06060f"}}>{selectedJob.title}</h2>
+                  <div style={{color:"#ddd8cc",fontSize:"13px",marginBottom:"8px"}}>{selectedJob.company}</div>
+                  <div style={{display:"flex",gap:"5px",flexWrap:"wrap"}}>
+                    {selectedJob.remote && <span style={badge("#5aaa8a")}>Remote</span>}
+                    <span style={badge(modeColor)}>{selectedJob.type}</span>
+                    {selectedJob.salary && selectedJob.salary!=="Not specified" && <span style={badge("#d4a843")}>{selectedJob.salary}</span>}
+                    {selectedJob.location && <span style={badge("#8888aa")}>{selectedJob.location}</span>}
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:"6px",flexDirection:"column",alignItems:"flex-end"}}>
+                  <div style={{display:"flex",gap:"6px"}}>
+                    <button style={btn()} onClick={() => addToQueue(selectedJob)}>
+                      {queue.find(q=>q.id===selectedJob.id) ? "✓ Queued" : "+ Queue"}
+                    </button>
+                    <button style={btn("primary")} onClick={() => { addToQueue(selectedJob); handleGenerateDocs(selectedJob); }}>
+                      Generate Now
+                    </button>
+                  </div>
+                  {!selectedJob.contact ? (
+                    <button style={{...btn(),fontSize:"10px"}} onClick={() => handleFindEmail(selectedJob)} disabled={findingEmail[selectedJob.id]}>
+                      {findingEmail[selectedJob.id] ? <span style={{display:"flex",alignItems:"center",gap:"6px"}}><span style={spinner}/>Finding...</span> : "Find Contact Email"}
+                    </button>
+                  ) : (
+                    <div style={{fontSize:"10px",color:"#5aaa8a",textAlign:"right"}}>
+                      {selectedJob.contactName && <div style={{fontWeight:"700"}}>{selectedJob.contactName} {selectedJob.contactTitle && `— ${selectedJob.contactTitle}`}</div>}
+                      <div>{selectedJob.contact}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {selectedJob.applyUrl && (
+                <div style={{marginBottom:"14px"}}>
+                  <a href={selectedJob.applyUrl} target="_blank" rel="noreferrer" style={{fontSize:"11px",color:"#d4a843",textDecoration:"none"}}>View Original Listing →</a>
+                </div>
+              )}
+
+              <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"1px",marginBottom:"6px"}}>DESCRIPTION</div>
+              <p style={{color:"#ddd8cc",fontSize:"12px",lineHeight:"1.8",marginBottom:"20px"}}>{selectedJob.fullDescription || selectedJob.description}</p>
+
+              {generating[selectedJob.id] && (
+                <div style={{textAlign:"center",padding:"30px",color:"#d4a843"}}>
+                  <div style={{...spinner,margin:"0 auto 10px"}}/>
+                  <div style={{fontSize:"12px"}}>Generating tailored documents...</div>
+                </div>
+              )}
+
+              {generatedDocs[selectedJob.id] && !generating[selectedJob.id] && (
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
+                  {docKeys.map(({k,label}) => generatedDocs[selectedJob.id][k] && (
+                    <div key={k}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px"}}>
+                        <span style={{fontSize:"9px",color:modeColor,letterSpacing:"1px",textTransform:"uppercase"}}>{label}</span>
+                        <button style={btn("sm")} onClick={() => copy(generatedDocs[selectedJob.id][k], k+selectedJob.id)}>
+                          {copyMsg[k+selectedJob.id] ? "✓" : "Copy"}
+                        </button>
+                      </div>
+                      <pre style={{background:"#0a0a18",border:"1px solid #1a1a2e",borderRadius:"6px",padding:"12px",color:"#ddd8cc",fontSize:"11px",lineHeight:"1.7",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"'Courier New',monospace",maxHeight:"320px",overflowY:"auto",margin:0}}>
+                        {generatedDocs[selectedJob.id][k]}
+                      </pre>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>}
+          </div>
+        </>}
+
+        {/* ── PROFILE ── */}
+        {view === VIEWS.PROFILE && (
+          <div style={{flex:1,overflowY:"auto",padding:"20px"}}>
+            <div style={{maxWidth:"640px"}}>
+              <h2 style={{fontSize:"18px",marginBottom:"4px",color:"#06060f"}}>
+                {mode===MODES.TALENT ? "Actor Profile" : mode===MODES.UGC ? "Creator Profile" : "Your Resume"}
+              </h2>
+              <p style={{color:"#ddd8cc",fontSize:"12px",marginBottom:"20px"}}>Your master profile — used to generate tailored documents for every application.</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
+                {[["name","Full Name"],["email","Email"]].map(([k,l]) => (
+                  <div key={k}>
+                    <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"10px"}}>{l}</div>
+                    <input style={{width:"100%",padding:"8px 10px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}} value={profile[k]} onChange={e=>setProfile(p=>({...p,[k]:e.target.value}))} placeholder={l}/>
+                  </div>
+                ))}
+              </div>
+
+              {mode === MODES.JOB && <>
+                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Short Bio</div>
+                <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={2} value={profile.bio} onChange={e=>setProfile(p=>({...p,bio:e.target.value}))} placeholder="2-3 sentence professional summary..."/>
+                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Master Resume *</div>
+                <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={20} value={profile.resume} onChange={e=>setProfile(p=>({...p,resume:e.target.value}))} placeholder={"EXPERIENCE\nCompany | Title | Dates\n- Achievement\n\nEDUCATION\n...\n\nSKILLS\n..."}/>
+              </>}
+
+              {mode === MODES.UGC && <>
+                {[["handle","Primary Handle (@)"],["rate","Base Rate / Campaign"]].map(([k,l]) => (
+                  <div key={k}>
+                    <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>{l}</div>
+                    <input style={{width:"100%",padding:"8px 10px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}} value={profile[k]||""} onChange={e=>setProfile(p=>({...p,[k]:e.target.value}))} placeholder={l}/>
+                  </div>
+                ))}
+                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Creator Bio</div>
+                <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={3} value={profile.bio} onChange={e=>setProfile(p=>({...p,bio:e.target.value}))} placeholder="Who you are, your niche, why brands love working with you..."/>
+                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Media Kit / Stats</div>
+                <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={4} value={profile.mediaKit||""} onChange={e=>setProfile(p=>({...p,mediaKit:e.target.value}))} placeholder={"Avg engagement: 4.2%\nPast partners: Nike, Red Bull\nMonthly reach: 2.3M..."}/>
+              </>}
+
+              {mode === MODES.TALENT && <>
+                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Union Status</div>
+                <input style={{width:"100%",padding:"8px 10px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}} value={profile.union} onChange={e=>setProfile(p=>({...p,union:e.target.value}))} placeholder="SAG-AFTRA, Non-Union, Eligible"/>
+                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Bio / Type / Special Skills</div>
+                <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={3} value={profile.bio} onChange={e=>setProfile(p=>({...p,bio:e.target.value}))} placeholder="Type, range, special skills, training, languages..."/>
+                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Acting Resume</div>
+                <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={14} value={profile.actingResume} onChange={e=>setProfile(p=>({...p,actingResume:e.target.value}))} placeholder={"FILM\nRole | Project | Director\n\nTV\n...\n\nTRAINING\n...\n\nSKILLS\n..."}/>
+              </>}
+
+              {profile.resume && mode===MODES.JOB && <div style={{marginTop:"8px",fontSize:"11px",color:"#5aaa8a"}}>Resume saved — {profile.resume.split("\n").length} lines</div>}
+            </div>
+          </div>
+        )}
+
+        {/* ── QUEUE ── */}
+        {view === VIEWS.QUEUE && (
+          <div style={{flex:1,overflowY:"auto",padding:"20px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+              <div>
+                <h2 style={{fontSize:"18px",margin:"0 0 4px",color:"#06060f"}}>Queue</h2>
+                <p style={{color:"#ddd8cc",fontSize:"12px",margin:0}}>Batch process — generates docs and finds contact emails for every opportunity</p>
+              </div>
+              <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+                {processing && <div style={{color:"#d4a843",fontSize:"12px",display:"flex",alignItems:"center",gap:"6px"}}><div style={spinner}/>Processing...</div>}
+                {queue.length > 0 && !processing && <button style={btn("primary")} onClick={processQueue}>Process All ({queue.length})</button>}
+              </div>
+            </div>
+
+            {queue.length === 0 ? (
+              <div style={{textAlign:"center",padding:"80px 0",color:"#ddd8cc",fontSize:"12px"}}>Queue is empty. Search and add opportunities.</div>
+            ) : (
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
+                {queue.map(job => (
+                  <div key={job.id} style={{background:"#0d0d1f",border:`1px solid ${job.status==="done"?"#2a4a2a":job.status==="processing"?"#4a4a0a":job.status==="failed"?"#4a1a1a":"#1a1a2e"}`,borderRadius:"8px",padding:"14px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between"}}>
+                      <div>
+                        <div style={{fontSize:"12px",fontWeight:"700",marginBottom:"2px"}}>{job.title}</div>
+                        <div style={{fontSize:"11px",color:"#ddd8cc"}}>{job.company}</div>
+                        {job.contact && <div style={{fontSize:"9px",color:"#5aaa8a",marginTop:"3px"}}>✓ {job.contact}</div>}
+                      </div>
+                      <span style={{...badge(job.status==="done"?"#5aaa8a":job.status==="processing"?"#d4a843":job.status==="failed"?"#e06c6c":"#8888aa"),whiteSpace:"nowrap",height:"fit-content"}}>
+                        {job.status==="done"?"Done":job.status==="processing"?"Working":job.status==="failed"?"Failed":"Pending"}
+                      </span>
+                    </div>
+                    <div style={{marginTop:"8px",display:"flex",gap:"5px",justifyContent:"flex-end"}}>
+                      <button onClick={() => setQueue(q=>q.filter(j=>j.id!==job.id))} style={{...btn("sm"),border:"1px solid #4a1a1a",color:"#e06c6c"}}>Remove</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {processLog.length > 0 && (
+              <div style={{marginTop:"20px"}}>
+                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",marginBottom:"6px"}}>PROCESS LOG</div>
+                <div style={{background:"#0a0a18",border:"1px solid #1a1a2e",borderRadius:"6px",padding:"12px",maxHeight:"200px",overflowY:"auto"}}>
+                  {processLog.map((l,i) => (
+                    <div key={i} style={{fontSize:"11px",color:l.type==="success"?"#5aaa8a":l.type==="error"?"#e06c6c":l.type==="start"?"#d4a843":"#ddd8cc",marginBottom:"2px",fontFamily:"monospace"}}>
+                      <span style={{color:"#ddd8cc",marginRight:"6px"}}>[{l.time}]</span>{l.msg}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── OUTREACH ── */}
+        {view === VIEWS.OUTREACH && (
+          <div style={{flex:1,overflowY:"auto",padding:"20px"}}>
+            <h2 style={{fontSize:"18px",marginBottom:"4px",color:"#06060f"}}>Outreach</h2>
+            <p style={{color:"#ddd8cc",fontSize:"12px",marginBottom:"20px"}}>Generated documents and emails ready to send</p>
+            {outreach.length === 0 ? (
+              <div style={{textAlign:"center",padding:"80px 0",color:"#ddd8cc",fontSize:"12px"}}>No outreach yet. Process your queue to generate.</div>
+            ) : outreach.map(e => (
+              <div key={e.id} style={{background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"8px",padding:"16px",marginBottom:"14px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:"12px",flexWrap:"wrap",gap:"8px"}}>
+                  <div>
+                    <div style={{fontSize:"13px",fontWeight:"700",marginBottom:"2px"}}>{e.job}</div>
+                    <div style={{fontSize:"11px",color:"#ddd8cc"}}>{e.company}</div>
+                    {e.contact!=="No email found" && <div style={{fontSize:"10px",color:"#5aaa8a",marginTop:"3px"}}>{e.contactName && `${e.contactName} — `}{e.contact}</div>}
+                  </div>
+                  <div style={{display:"flex",gap:"6px"}}>
+                    <button style={btn("sm")} onClick={() => copy(Object.values(e.docs||{}).join("\n\n---\n\n"),"all"+e.id)}>
+                      {copyMsg["all"+e.id]?"✓ Copied":"Copy All"}
+                    </button>
+                    {e.contact!=="No email found" && (
+                      <a href={`mailto:${e.contact}?subject=${encodeURIComponent(e.job)}&body=${encodeURIComponent(e.docs?.coverLetter||e.docs?.pitchEmail||e.docs?.submission||"")}`}
+                        style={{...btn("primary"),textDecoration:"none",fontSize:"10px",padding:"4px 10px"}}>Open in Mail</a>
+                    )}
+                  </div>
+                </div>
+                {docKeys.map(({k,label}) => e.docs?.[k] && (
+                  <div key={k} style={{marginBottom:"10px"}}>
+                    <div style={{fontSize:"9px",color:modeColor,letterSpacing:"1px",marginBottom:"4px",textTransform:"uppercase"}}>{label}</div>
+                    <pre style={{background:"#0a0a18",border:"1px solid #1a1a2e",borderRadius:"5px",padding:"10px",color:"#ddd8cc",fontSize:"11px",lineHeight:"1.6",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"'Courier New',monospace",maxHeight:"120px",overflowY:"auto",margin:0}}>
+                      {e.docs[k]}
+                    </pre>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
