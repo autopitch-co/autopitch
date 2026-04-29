@@ -34,7 +34,7 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 20px 60
 .hero-title { font-family: 'Playfair Display', serif; font-size: clamp(56px, 9vw, 104px); font-weight: 900; line-height: 0.95; letter-spacing: -3px; margin-bottom: 28px; animation: fadeUp 0.5s 0.1s ease both; }
 .hero-title .white { color: #ffffff; }
 .hero-title .gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.hero-sub { font-family: 'Playfair Display', serif; font-size: clamp(16px, 2vw, 22px); font-style: italic; color: var(--text); max-width: 560px; line-height: 1.7; margin-bottom: 16px; animation: fadeUp 0.5s 0.2s ease both; }
+.hero-sub { font-family: 'Playfair Display', serif; font-size: clamp(16px, 2vw, 22px); font-style: italic; color: #ffffff; max-width: 560px; line-height: 1.7; margin-bottom: 16px; animation: fadeUp 0.5s 0.2s ease both; }
 .hero-sub2 { font-size: 13px; color: var(--muted); max-width: 500px; line-height: 1.8; margin-bottom: 32px; animation: fadeUp 0.5s 0.25s ease both; }
 .founding-banner { background: linear-gradient(135deg, #0d1a0a, #0a1a10); border: 1px solid rgba(90,170,138,0.4); border-radius: 10px; padding: 20px 28px; max-width: 520px; margin-bottom: 32px; animation: fadeUp 0.5s 0.28s ease both; }
 .founding-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--green); margin-bottom: 6px; }
@@ -51,18 +51,18 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 20px 60
 .stat-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
 .section { position: relative; z-index: 1; padding: 100px 60px; max-width: 1160px; margin: 0 auto; }
 .section-tag { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; }
-.section-title { font-family: 'Playfair Display', serif; font-size: clamp(30px, 4vw, 50px); font-weight: 700; line-height: 1.1; margin-bottom: 56px; max-width: 580px; }
+.section-title { font-family: 'Playfair Display', serif; font-size: clamp(30px, 4vw, 50px); font-weight: 700; line-height: 1.1; margin-bottom: 56px; max-width: 580px; color: #ffffff; }
 .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 .feature-card { background: var(--bg2); padding: 34px 30px; transition: background 0.2s; }
 .feature-card:hover { background: var(--bg3); }
 .feature-icon { font-size: 26px; margin-bottom: 14px; display: block; }
-.feature-title { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+.feature-title { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; margin-bottom: 10px; color: #ffffff; }
 .feature-desc { font-size: 12px; color: var(--muted); line-height: 1.85; }
 .platforms-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .platform-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px 16px; text-align: center; transition: all 0.2s; }
 .platform-card:hover { border-color: var(--gold); transform: translateY(-2px); }
 .platform-icon { font-size: 24px; margin-bottom: 8px; display: block; }
-.platform-name { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.platform-name { font-size: 12px; font-weight: 600; color: #ffffff; margin-bottom: 4px; }
 .platform-desc { font-size: 10px; color: var(--muted); line-height: 1.5; }
 .platform-badge { display: inline-block; margin-top: 8px; padding: 2px 8px; border-radius: 10px; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
 .platform-badge.job { background: rgba(212,168,67,0.15); color: var(--gold); }
@@ -70,22 +70,47 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 20px 60
 .platform-badge.both { background: rgba(90,170,138,0.15); color: var(--green); }
 .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .step { position: relative; padding: 28px 24px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; }
-.step::after { content: '→'; position: absolute; right: -14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; z-index: 2; }
+.step::after { content: '→'; position: absolute; right: -14px; top: 50%; transform: translateY(-50%); color: var(--gold); font-size: 16px; z-index: 2; }
 .step:last-child::after { display: none; }
 .step-num { font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 900; color: var(--gold-dim); line-height: 1; margin-bottom: 12px; }
-.step-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+.step-title { font-size: 12px; font-weight: 500; color: #ffffff; margin-bottom: 8px; }
 .step-desc { font-size: 11px; color: var(--muted); line-height: 1.75; }
 .personas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .persona { padding: 36px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg2); position: relative; overflow: hidden; }
 .persona::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--gold), transparent); }
 .persona-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
-.persona-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 18px; }
+.persona-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 18px; color: #ffffff; }
 .persona-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
 .persona-list li { font-size: 12px; color: var(--muted); padding-left: 16px; position: relative; line-height: 1.6; }
 .persona-list li::before { content: '→'; position: absolute; left: 0; color: var(--gold); }
+.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.pricing-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 36px 28px; position: relative; transition: transform 0.2s; }
+.pricing-card:hover { transform: translateY(-4px); }
+.pricing-card.featured { border-color: var(--gold); background: linear-gradient(180deg, #0f0f20 0%, var(--bg2) 100%); }
+.pricing-card.featured::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 12px 12px 0 0; background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
+.pricing-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--bg); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 4px 14px; border-radius: 20px; white-space: nowrap; }
+.pricing-name { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.pricing-price { font-family: 'Playfair Display', serif; font-size: 52px; font-weight: 900; color: #ffffff; line-height: 1; margin-bottom: 4px; }
+.pricing-price sup { font-size: 22px; vertical-align: super; color: var(--gold); }
+.pricing-price span { font-size: 16px; color: var(--muted); }
+.pricing-strike { font-size: 13px; color: #444460; text-decoration: line-through; margin-bottom: 4px; }
+.pricing-founding { font-size: 11px; color: var(--green); margin-bottom: 8px; }
+.pricing-billing { font-size: 11px; color: var(--muted); margin-bottom: 28px; }
+.pricing-divider { height: 1px; background: var(--border); margin-bottom: 24px; }
+.pricing-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+.pricing-features li { font-size: 12px; color: var(--muted); padding-left: 18px; position: relative; line-height: 1.5; }
+.pricing-features li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+.pricing-features li.no::before { content: '✕'; color: #2a2a3a; }
+.pricing-features li.no { color: #2a2a3a; }
+.pricing-btn { width: 100%; padding: 14px; border-radius: 7px; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 1px; cursor: none; transition: all 0.2s; text-align: center; text-decoration: none; display: block; }
+.pricing-btn.primary { background: linear-gradient(135deg, var(--gold), var(--gold-light)); border: none; color: var(--bg); }
+.pricing-btn.primary:hover { opacity: 0.88; }
+.pricing-btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+.pricing-btn.secondary:hover { border-color: var(--gold); color: var(--gold); }
+.pricing-trial { font-size: 10px; color: var(--muted); text-align: center; margin-top: 10px; }
 .cta-section { position: relative; z-index: 1; text-align: center; padding: 120px 60px; overflow: hidden; }
 .cta-section::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 700px; height: 450px; background: radial-gradient(ellipse, rgba(212,168,67,0.09) 0%, transparent 70%); pointer-events: none; }
-.cta-title { font-family: 'Playfair Display', serif; font-size: clamp(36px, 5vw, 68px); font-weight: 900; line-height: 1.05; margin-bottom: 20px; }
+.cta-title { font-family: 'Playfair Display', serif; font-size: clamp(36px, 5vw, 68px); font-weight: 900; line-height: 1.05; margin-bottom: 20px; color: #ffffff; }
 .cta-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.85; }
 footer { position: relative; z-index: 1; border-top: 1px solid var(--border); padding: 28px 60px; display: flex; justify-content: space-between; align-items: center; }
 .footer-brand { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold); }
@@ -94,18 +119,12 @@ footer { position: relative; z-index: 1; border-top: 1px solid var(--border); pa
 @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
 @keyframes ticker { from { transform:translateX(0); } to { transform:translateX(-50%); } }
 @media (max-width: 900px) {
-  nav { padding: 16px 20px; }
-  .hero { padding: 60px 20px; }
-  .section { padding: 60px 20px; }
-  .features-grid { grid-template-columns: 1fr; }
-  .platforms-grid { grid-template-columns: 1fr 1fr; }
-  .steps { grid-template-columns: 1fr 1fr; }
-  .step::after { display: none; }
-  .personas { grid-template-columns: 1fr; }
-  .stats-bar { gap: 28px; }
-  footer { flex-direction: column; gap: 10px; text-align: center; padding: 20px; }
-  .cta-section { padding: 80px 20px; }
-  .hero-title { letter-spacing: -2px; }
+  nav { padding: 16px 20px; } .hero { padding: 60px 20px; } .section { padding: 60px 20px; }
+  .features-grid { grid-template-columns: 1fr; } .platforms-grid { grid-template-columns: 1fr 1fr; }
+  .steps { grid-template-columns: 1fr 1fr; } .step::after { display: none; }
+  .personas { grid-template-columns: 1fr; } .pricing-grid { grid-template-columns: 1fr; }
+  .stats-bar { gap: 28px; } footer { flex-direction: column; gap: 10px; text-align: center; padding: 20px; }
+  .cta-section { padding: 80px 20px; } .hero-title { letter-spacing: -2px; }
 }
 </style>
 </head>
@@ -113,41 +132,33 @@ footer { position: relative; z-index: 1; border-top: 1px solid var(--border); pa
 <div class="cursor" id="cursor"></div>
 <div class="cursor-ring" id="cursorRing"></div>
 <nav>
-  <a href="#" class="nav-logo">
-    <div class="nav-logo-mark">AP</div>
-    <div class="nav-logo-text">Autopitch</div>
-  </a>
+  <a href="#" class="nav-logo"><div class="nav-logo-mark">AP</div><div class="nav-logo-text">Autopitch</div></a>
   <a href="https://tally.so/r/EkBEJ2" target="_blank" class="nav-cta">Join Waitlist →</a>
 </nav>
-<div class="ticker-wrap">
-  <div class="ticker">
-    <span class="ticker-item"><span>⚡</span>AI-Powered Applications</span>
-    <span class="ticker-item"><span>🎯</span>UGC & Brand Deals</span>
-    <span class="ticker-item"><span>📧</span>Cold Email Automation</span>
-    <span class="ticker-item"><span>💼</span>Tailored Resumes Per Job</span>
-    <span class="ticker-item"><span>🌙</span>Apply While You Sleep</span>
-    <span class="ticker-item"><span>🚀</span>Upwork · LinkedIn · Indeed</span>
-    <span class="ticker-item"><span>🎬</span>UGC · Billo · Trend.io</span>
-    <span class="ticker-item"><span>⚡</span>AI-Powered Applications</span>
-    <span class="ticker-item"><span>🎯</span>UGC & Brand Deals</span>
-    <span class="ticker-item"><span>📧</span>Cold Email Automation</span>
-    <span class="ticker-item"><span>💼</span>Tailored Resumes Per Job</span>
-    <span class="ticker-item"><span>🌙</span>Apply While You Sleep</span>
-    <span class="ticker-item"><span>🚀</span>Upwork · LinkedIn · Indeed</span>
-    <span class="ticker-item"><span>🎬</span>UGC · Billo · Trend.io</span>
-  </div>
-</div>
+<div class="ticker-wrap"><div class="ticker">
+  <span class="ticker-item"><span>⚡</span>AI-Powered Applications</span>
+  <span class="ticker-item"><span>🎯</span>UGC & Brand Deals</span>
+  <span class="ticker-item"><span>📧</span>Cold Email Automation</span>
+  <span class="ticker-item"><span>💼</span>Tailored Resumes Per Job</span>
+  <span class="ticker-item"><span>🌙</span>Apply While You Sleep</span>
+  <span class="ticker-item"><span>🚀</span>Upwork · LinkedIn · Indeed</span>
+  <span class="ticker-item"><span>🎬</span>UGC · Billo · Trend.io</span>
+  <span class="ticker-item"><span>⚡</span>AI-Powered Applications</span>
+  <span class="ticker-item"><span>🎯</span>UGC & Brand Deals</span>
+  <span class="ticker-item"><span>📧</span>Cold Email Automation</span>
+  <span class="ticker-item"><span>💼</span>Tailored Resumes Per Job</span>
+  <span class="ticker-item"><span>🌙</span>Apply While You Sleep</span>
+  <span class="ticker-item"><span>🚀</span>Upwork · LinkedIn · Indeed</span>
+  <span class="ticker-item"><span>🎬</span>UGC · Billo · Trend.io</span>
+</div></div>
 <section class="hero">
   <div class="hero-eyebrow">Now Accepting Early Access</div>
-  <h1 class="hero-title">
-    <span class="white">Your pitch,</span><br/>
-    <span class="gold">automated.</span>
-  </h1>
+  <h1 class="hero-title"><span class="white">Your pitch,</span><br/><span class="gold">automated.</span></h1>
   <p class="hero-sub">Find jobs and brand deals. Apply while you sleep.</p>
   <p class="hero-sub2">Autopitch searches job boards and UGC platforms, writes tailored resumes, cover letters, and cold emails — then sends them directly to hiring managers and brand contacts overnight.</p>
   <div class="founding-banner">
     <div class="founding-title">🏆 Founding Member Offer</div>
-    <div class="founding-desc">First <span>200 members</span> lock in Pro at <span>$29/mo for life</span>. Regular price $59/mo. Join the waitlist to claim your spot.</div>
+    <div class="founding-desc">First <span>200 members</span> lock in Pro at <span>$29/mo for life.</span> Regular price $59/mo. Join the waitlist to claim your spot.</div>
   </div>
   <div class="dollar-badge">✓ Less than a dollar a day</div>
   <a href="https://tally.so/r/EkBEJ2" target="_blank" class="cta-btn">Join the Waitlist — Claim Your Spot →</a>
@@ -227,11 +238,81 @@ footer { position: relative; z-index: 1; border-top: 1px solid var(--border); pa
     </div>
   </div>
 </section>
+<div class="divider"></div>
+<section class="section" style="padding-top:80px;">
+  <div class="section-tag">Pricing</div>
+  <h2 class="section-title">Simple pricing. No surprises.</h2>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="pricing-name">Starter</div>
+      <div class="pricing-price"><sup>$</sup>29<span>/mo</span></div>
+      <div class="pricing-billing">30-day free trial included</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li>50 applications per month</li>
+        <li>Job search with filters</li>
+        <li>AI resume tailoring</li>
+        <li>AI cover letters</li>
+        <li>1 profile</li>
+        <li class="no">UGC & Upwork search</li>
+        <li class="no">Cold email outreach</li>
+        <li class="no">Hiring manager finder</li>
+        <li class="no">Overnight batch mode</li>
+      </ul>
+      <a href="https://tally.so/r/EkBEJ2" target="_blank" class="pricing-btn secondary">Join Waitlist →</a>
+      <p class="pricing-trial">30-day free trial · Cancel anytime</p>
+    </div>
+    <div class="pricing-card featured">
+      <div class="pricing-badge">Most Popular</div>
+      <div class="pricing-name">Pro</div>
+      <div class="pricing-strike">Regular price $59/mo</div>
+      <div class="pricing-price"><sup>$</sup>29<span>/mo</span></div>
+      <div class="pricing-founding">🏆 Founding member rate — locked for life</div>
+      <div class="pricing-billing">First 200 members only · 30-day free trial</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li>150 applications per month</li>
+        <li>Real job search — all major boards</li>
+        <li>UGC & Upwork search</li>
+        <li>AI resume tailoring</li>
+        <li>AI cover letters</li>
+        <li>Cold email outreach</li>
+        <li>Hiring manager finder (50 searches/mo)</li>
+        <li>Overnight batch processing</li>
+        <li>1 profile</li>
+      </ul>
+      <a href="https://tally.so/r/EkBEJ2" target="_blank" class="pricing-btn primary">Claim Founding Rate →</a>
+      <p class="pricing-trial">30-day free trial · Cancel anytime</p>
+    </div>
+    <div class="pricing-card">
+      <div class="pricing-name">Fast Track</div>
+      <div class="pricing-price"><sup>$</sup>249<span>/mo</span></div>
+      <div class="pricing-billing">For individuals & agencies going all in</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li>Unlimited applications</li>
+        <li>Real job search — all major boards</li>
+        <li>UGC & Upwork search</li>
+        <li>AI resume tailoring</li>
+        <li>AI cover letters</li>
+        <li>Cold email outreach</li>
+        <li>Hiring manager finder (500 searches/mo)</li>
+        <li>Overnight batch processing</li>
+        <li>Up to 10 profiles</li>
+        <li>Team dashboard</li>
+        <li>White label ready</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="https://tally.so/r/EkBEJ2" target="_blank" class="pricing-btn secondary">Join Waitlist →</a>
+      <p class="pricing-trial">30-day free trial · Cancel anytime</p>
+    </div>
+  </div>
+</section>
 <section class="cta-section">
   <div class="section-tag" style="margin-bottom:16px;">Early Access</div>
   <h2 class="cta-title">Stop pitching<br/>one at a time.</h2>
   <p class="cta-sub">Join the waitlist. First 200 founding members lock in Pro at $29/mo for life. Regular price $59/mo.</p>
-  <div class="founding-banner" style="margin: 0 auto 24px; animation: none;">
+  <div class="founding-banner" style="margin:0 auto 24px;animation:none;">
     <div class="founding-title">🏆 Founding Member Offer</div>
     <div class="founding-desc">First <span>200 members</span> lock in Pro at <span>$29/mo for life.</span> Regular price $59/mo. Never goes up.</div>
   </div>
@@ -244,13 +325,13 @@ footer { position: relative; z-index: 1; border-top: 1px solid var(--border); pa
   <div class="footer-note" style="color:var(--gold);">⚡ Your pitch, automated.</div>
 </footer>
 <script>
-  const cursor = document.getElementById('cursor');
-  const ring = document.getElementById('cursorRing');
+  const cursor=document.getElementById('cursor');
+  const ring=document.getElementById('cursorRing');
   let mx=0,my=0,rx=0,ry=0;
   document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx+'px';cursor.style.top=my+'px';});
   (function animRing(){rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animRing);})();
   const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)';}});},{threshold:0.08});
-  document.querySelectorAll('.feature-card,.step,.persona,.platform-card').forEach(el=>{el.style.opacity='0';el.style.transform='translateY(18px)';el.style.transition='opacity 0.5s ease,transform 0.5s ease';observer.observe(el);});
+  document.querySelectorAll('.feature-card,.step,.persona,.platform-card,.pricing-card').forEach(el=>{el.style.opacity='0';el.style.transform='translateY(18px)';el.style.transition='opacity 0.5s ease,transform 0.5s ease';observer.observe(el);});
 </script>
 </body>
 </html>
