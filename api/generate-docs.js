@@ -9,15 +9,39 @@ export default async function handler(req, res) {
   console.log('GROK_API_KEY length:', process.env.GROK_API_KEY?.length);
 
   const systemPrompts = {
-    ugc: "You are a UGC talent manager. Output ONLY a raw JSON object with keys 'pitchEmail' and 'mediaKitSummary'. No markdown, no backticks, no explanation.",
-    talent: "You are a talent agent. Output ONLY a raw JSON object with keys 'submission' and 'pitchEmail'. No markdown, no backticks, no explanation.",
-    job: "You are a career coach. Output ONLY a raw JSON object with keys 'resume' and 'coverLetter'. No markdown, no backticks, no explanation."
+    ugc: `You are a top UGC talent manager. Write compelling, personalized outreach for creators.
+Output ONLY a raw JSON object with exactly two keys: 'pitchEmail' and 'mediaKitSummary'.
+- pitchEmail: A short, punchy cold email (150-200 words) that references the specific brand/opportunity, highlights the creator's niche and stats, and ends with a clear CTA. Use the creator's name. Sound human, not corporate.
+- mediaKitSummary: A 3-4 sentence highlight reel of the creator's best stats, past brand partners, and content style. Make it easy to copy-paste into a media kit.
+No markdown, no backticks, no explanation. Raw JSON only.`,
+
+    talent: `You are a seasoned talent agent submitting actors for roles.
+Output ONLY a raw JSON object with exactly two keys: 'submission' and 'pitchEmail'.
+- submission: A professional actor submission (100-150 words) that matches the actor's type and credits to the specific role. Highlight union status, relevant experience, and special skills.
+- pitchEmail: A brief, professional email to the casting director (120-160 words) that sells the actor for this specific project. Reference the project/role by name.
+No markdown, no backticks, no explanation. Raw JSON only.`,
+
+    job: `You are an expert career coach and resume writer.
+Output ONLY a raw JSON object with exactly two keys: 'resume' and 'coverLetter'.
+- resume: A fully tailored, ATS-optimized resume rewritten to match this specific job posting. Reorder and reword bullet points to mirror the job description's keywords. Keep all real experience but emphasize what's most relevant. Use clean formatting with sections: SUMMARY, EXPERIENCE, EDUCATION, SKILLS.
+- coverLetter: A compelling, personalized cover letter (250-300 words) that opens with a strong hook, connects 2-3 specific achievements from the resume to the job's needs, and closes with confidence. Address it to the hiring team at the company. Do NOT use generic phrases like "I am writing to express my interest."
+No markdown, no backticks, no explanation. Raw JSON only.`
   };
 
   const userContent = {
-    ugc: `Creator: ${profile.name}, Bio: ${profile.bio}, Rate: ${profile.rate || 'negotiable'}, Stats: ${profile.mediaKit || 'n/a'}. Opportunity: ${job.title} at ${job.company}. Description: ${(job.description||'').slice(0,600)}`,
-    talent: `Actor: ${profile.name}, Union: ${profile.union||'non-union'}, Bio: ${profile.bio}, Resume: ${(profile.actingResume||'').slice(0,400)}. Role: ${job.title} at ${job.company}. ${(job.description||'').slice(0,600)}`,
-    job: `Resume: ${(profile.resume||'').slice(0,800)}. Job: ${job.title} at ${job.company}. ${(job.description||'').slice(0,600)}`
+    ugc: `Creator profile — Name: ${profile.name || 'Creator'}, Bio: ${profile.bio || 'n/a'}, Rate: ${profile.rate || 'negotiable'}, Stats/Media Kit: ${profile.mediaKit || 'n/a'}.
+Brand opportunity — ${job.title} at ${job.company}. ${(job.fullDescription || job.description || '').slice(0, 1200)}`,
+
+    talent: `Actor profile — Name: ${profile.name || 'Actor'}, Union: ${profile.union || 'non-union'}, Bio/Type/Skills: ${profile.bio || 'n/a'}, Credits: ${(profile.actingResume || '').slice(0, 1500)}.
+Role/Project — ${job.title} at ${job.company}. ${(job.fullDescription || job.description || '').slice(0, 1000)}`,
+
+    job: `Candidate resume:
+${(profile.resume || '').slice(0, 4000)}
+
+${profile.bio ? `Professional summary: ${profile.bio}` : ''}
+
+Target job — ${job.title} at ${job.company}.
+Job description: ${(job.fullDescription || job.description || '').slice(0, 1500)}`
   };
 
   try {
@@ -33,7 +57,7 @@ export default async function handler(req, res) {
           { role: 'system', content: systemPrompts[mode] || systemPrompts.job },
           { role: 'user', content: userContent[mode] || userContent.job }
         ],
-        max_tokens: 1500,
+        max_tokens: 3000,
         temperature: 0.4
       })
     });

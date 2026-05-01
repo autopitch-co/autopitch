@@ -184,9 +184,12 @@ function Chip({ label, options, selected, onToggle, color = "#d4a843" }) {
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 function App() {
-  const [mode, setMode] = useState(MODES.JOB);
+  const [mode, setMode] = useState(() => localStorage.getItem('ap_mode') || MODES.JOB);
   const [view, setView] = useState(VIEWS.SEARCH);
-  const [profile, setProfile] = useState({ name:"", email:"", resume:"", bio:"", handle:"", rate:"", mediaKit:"", actingResume:"", union:"" });
+  const [profile, setProfile] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ap_profile') || 'null') || { name:"", email:"", resume:"", bio:"", handle:"", rate:"", mediaKit:"", actingResume:"", union:"" }; }
+    catch { return { name:"", email:"", resume:"", bio:"", handle:"", rate:"", mediaKit:"", actingResume:"", union:"" }; }
+  });
   const [filters, setFilters] = useState({ keywords:"", location:"", workType:[], jobType:[], industry:[], castingType:[] });
   const toggleFilter = (key, val) => setFilters(f => ({ ...f, [key]: f[key].includes(val) ? f[key].filter(x=>x!==val) : [...f[key], val] }));
 
@@ -204,6 +207,9 @@ function App() {
   const [pdfLoading, setPdfLoading] = useState({});
   const resumeFileRef = useRef(null);
   const actingResumeFileRef = useRef(null);
+
+  useEffect(() => { localStorage.setItem('ap_profile', JSON.stringify(profile)); }, [profile]);
+  useEffect(() => { localStorage.setItem('ap_mode', mode); }, [mode]);
 
   const modeColor = mode === MODES.JOB ? "#d4a843" : mode === MODES.UGC ? "#e07ad4" : "#8a7ad4";
   const log = (msg, type="info") => setProcessLog(p => [...p, { msg, type, time: new Date().toLocaleTimeString() }]);
