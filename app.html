@@ -8,6 +8,8 @@
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{--gold:#d4a843;--gold-light:#f0c060;--gold-dim:#d4a84344;--bg:#06060f;--bg2:#0a0a18;--bg3:#0d0d1f;--text:#ddd8cc;--muted:#ddd8cc;--border:#1a1a2e;--green:#5aaa8a;--purple:#8a7ad4;--pink:#e07ad4;}
@@ -35,7 +37,40 @@ input::placeholder,textarea::placeholder{color:#2a2a4a!important;}
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useCallback, useEffect } = React;
+const { useState, useCallback, useEffect, useRef } = React;
+
+// Set PDF.js worker
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+const extractPdfText = async (file) => {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items.map(item => item.str).join(' ');
+    text += pageText + '\n';
+  }
+  return text.trim();
+};
+
+const downloadAsPdf = (content, filename) => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  doc.setFont('courier');
+  doc.setFontSize(9);
+  const lines = doc.splitTextToSize(content, 180);
+  let y = 15;
+  for (const line of lines) {
+    if (y > 280) { doc.addPage(); y = 15; }
+    doc.text(line, 15, y);
+    y += 4.5;
+  }
+  doc.save(filename);
+};
 
 const MODES = { JOB: "job", UGC: "ugc", TALENT: "talent" };
 const VIEWS = { SEARCH: "search", PROFILE: "profile", QUEUE: "queue", OUTREACH: "outreach" };
@@ -166,6 +201,9 @@ function App() {
   const [processing, setProcessing] = useState(false);
   const [processLog, setProcessLog] = useState([]);
   const [copyMsg, setCopyMsg] = useState({});
+  const [pdfLoading, setPdfLoading] = useState({});
+  const resumeFileRef = useRef(null);
+  const actingResumeFileRef = useRef(null);
 
   const modeColor = mode === MODES.JOB ? "#d4a843" : mode === MODES.UGC ? "#e07ad4" : "#8a7ad4";
   const log = (msg, type="info") => setProcessLog(p => [...p, { msg, type, time: new Date().toLocaleTimeString() }]);
@@ -244,6 +282,20 @@ function App() {
     await navigator.clipboard.writeText(text);
     setCopyMsg(m => ({ ...m, [key]: true }));
     setTimeout(() => setCopyMsg(m => ({ ...m, [key]: false })), 1800);
+  };
+
+  const handlePdfUpload = async (e, field) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPdfLoading(l => ({ ...l, [field]: true }));
+    try {
+      const text = await extractPdfText(file);
+      setProfile(p => ({ ...p, [field]: text }));
+    } catch (err) {
+      alert('Could not read PDF: ' + err.message);
+    }
+    setPdfLoading(l => ({ ...l, [field]: false }));
+    e.target.value = '';
   };
 
   const docKeys = mode === MODES.TALENT
@@ -375,7 +427,7 @@ function App() {
             ) : <>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px",flexWrap:"wrap",gap:"10px"}}>
                 <div>
-                  <h2 style={{margin:"0 0 4px",fontSize:"18px",color:"#06060f"}}>{selectedJob.title}</h2>
+                  <h2 style={{margin:"0 0 4px",fontSize:"18px",color:"#f0c060"}}>{selectedJob.title}</h2>
                   <div style={{color:"#ddd8cc",fontSize:"13px",marginBottom:"8px"}}>{selectedJob.company}</div>
                   <div style={{display:"flex",gap:"5px",flexWrap:"wrap"}}>
                     {selectedJob.remote && <span style={badge("#5aaa8a")}>Remote</span>}
@@ -426,11 +478,16 @@ function App() {
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
                   {docKeys.map(({k,label}) => generatedDocs[selectedJob.id][k] && (
                     <div key={k}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px",gap:"4px",flexWrap:"wrap"}}>
                         <span style={{fontSize:"9px",color:modeColor,letterSpacing:"1px",textTransform:"uppercase"}}>{label}</span>
-                        <button style={btn("sm")} onClick={() => copy(generatedDocs[selectedJob.id][k], k+selectedJob.id)}>
-                          {copyMsg[k+selectedJob.id] ? "✓" : "Copy"}
-                        </button>
+                        <div style={{display:"flex",gap:"4px"}}>
+                          <button style={btn("sm")} onClick={() => copy(generatedDocs[selectedJob.id][k], k+selectedJob.id)}>
+                            {copyMsg[k+selectedJob.id] ? "✓" : "Copy"}
+                          </button>
+                          <button style={{...btn("sm"),border:"1px solid #d4a84366",color:"#d4a843"}} onClick={() => downloadAsPdf(generatedDocs[selectedJob.id][k], `${label.replace(/\s+/g,'-').toLowerCase()}-${selectedJob.company}.pdf`)}>
+                            PDF
+                          </button>
+                        </div>
                       </div>
                       <pre style={{background:"#0a0a18",border:"1px solid #1a1a2e",borderRadius:"6px",padding:"12px",color:"#ddd8cc",fontSize:"11px",lineHeight:"1.7",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"'Courier New',monospace",maxHeight:"320px",overflowY:"auto",margin:0}}>
                         {generatedDocs[selectedJob.id][k]}
@@ -447,7 +504,7 @@ function App() {
         {view === VIEWS.PROFILE && (
           <div style={{flex:1,overflowY:"auto",padding:"20px"}}>
             <div style={{maxWidth:"640px"}}>
-              <h2 style={{fontSize:"18px",marginBottom:"4px",color:"#06060f"}}>
+              <h2 style={{fontSize:"18px",marginBottom:"4px",color:"#f0c060"}}>
                 {mode===MODES.TALENT ? "Actor Profile" : mode===MODES.UGC ? "Creator Profile" : "Your Resume"}
               </h2>
               <p style={{color:"#ddd8cc",fontSize:"12px",marginBottom:"20px"}}>Your master profile — used to generate tailored documents for every application.</p>
@@ -463,7 +520,16 @@ function App() {
               {mode === MODES.JOB && <>
                 <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Short Bio</div>
                 <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={2} value={profile.bio} onChange={e=>setProfile(p=>({...p,bio:e.target.value}))} placeholder="2-3 sentence professional summary..."/>
-                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Master Resume *</div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:"14px",marginBottom:"5px"}}>
+                  <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase"}}>Master Resume *</div>
+                  <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
+                    {pdfLoading.resume && <span style={{fontSize:"10px",color:"#d4a843"}}>Extracting...</span>}
+                    <button style={{...btn("sm"),fontSize:"9px",padding:"3px 8px"}} onClick={() => resumeFileRef.current?.click()}>
+                      Upload PDF
+                    </button>
+                    <input ref={resumeFileRef} type="file" accept=".pdf" style={{display:"none"}} onChange={e=>handlePdfUpload(e,"resume")}/>
+                  </div>
+                </div>
                 <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={20} value={profile.resume} onChange={e=>setProfile(p=>({...p,resume:e.target.value}))} placeholder={"EXPERIENCE\nCompany | Title | Dates\n- Achievement\n\nEDUCATION\n...\n\nSKILLS\n..."}/>
               </>}
 
@@ -485,7 +551,16 @@ function App() {
                 <input style={{width:"100%",padding:"8px 10px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}} value={profile.union} onChange={e=>setProfile(p=>({...p,union:e.target.value}))} placeholder="SAG-AFTRA, Non-Union, Eligible"/>
                 <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Bio / Type / Special Skills</div>
                 <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={3} value={profile.bio} onChange={e=>setProfile(p=>({...p,bio:e.target.value}))} placeholder="Type, range, special skills, training, languages..."/>
-                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Acting Resume</div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:"14px",marginBottom:"5px"}}>
+                  <div style={{fontSize:"9px",color:"#8a7ad4",letterSpacing:"2px",textTransform:"uppercase"}}>Acting Resume</div>
+                  <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
+                    {pdfLoading.actingResume && <span style={{fontSize:"10px",color:"#8a7ad4"}}>Extracting...</span>}
+                    <button style={{...btn("sm"),fontSize:"9px",padding:"3px 8px",border:"1px solid #8a7ad4",color:"#8a7ad4"}} onClick={() => actingResumeFileRef.current?.click()}>
+                      Upload PDF
+                    </button>
+                    <input ref={actingResumeFileRef} type="file" accept=".pdf" style={{display:"none"}} onChange={e=>handlePdfUpload(e,"actingResume")}/>
+                  </div>
+                </div>
                 <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={14} value={profile.actingResume} onChange={e=>setProfile(p=>({...p,actingResume:e.target.value}))} placeholder={"FILM\nRole | Project | Director\n\nTV\n...\n\nTRAINING\n...\n\nSKILLS\n..."}/>
               </>}
 
@@ -499,7 +574,7 @@ function App() {
           <div style={{flex:1,overflowY:"auto",padding:"20px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
               <div>
-                <h2 style={{fontSize:"18px",margin:"0 0 4px",color:"#06060f"}}>Queue</h2>
+                <h2 style={{fontSize:"18px",margin:"0 0 4px",color:"#f0c060"}}>Queue</h2>
                 <p style={{color:"#ddd8cc",fontSize:"12px",margin:0}}>Batch process — generates docs and finds contact emails for every opportunity</p>
               </div>
               <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
@@ -550,7 +625,7 @@ function App() {
         {/* ── OUTREACH ── */}
         {view === VIEWS.OUTREACH && (
           <div style={{flex:1,overflowY:"auto",padding:"20px"}}>
-            <h2 style={{fontSize:"18px",marginBottom:"4px",color:"#06060f"}}>Outreach</h2>
+            <h2 style={{fontSize:"18px",marginBottom:"4px",color:"#f0c060"}}>Outreach</h2>
             <p style={{color:"#ddd8cc",fontSize:"12px",marginBottom:"20px"}}>Generated documents and emails ready to send</p>
             {outreach.length === 0 ? (
               <div style={{textAlign:"center",padding:"80px 0",color:"#ddd8cc",fontSize:"12px"}}>No outreach yet. Process your queue to generate.</div>
@@ -562,9 +637,12 @@ function App() {
                     <div style={{fontSize:"11px",color:"#ddd8cc"}}>{e.company}</div>
                     {e.contact!=="No email found" && <div style={{fontSize:"10px",color:"#5aaa8a",marginTop:"3px"}}>{e.contactName && `${e.contactName} — `}{e.contact}</div>}
                   </div>
-                  <div style={{display:"flex",gap:"6px"}}>
+                  <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
                     <button style={btn("sm")} onClick={() => copy(Object.values(e.docs||{}).join("\n\n---\n\n"),"all"+e.id)}>
                       {copyMsg["all"+e.id]?"✓ Copied":"Copy All"}
+                    </button>
+                    <button style={{...btn("sm"),border:"1px solid #d4a84366",color:"#d4a843"}} onClick={() => downloadAsPdf(Object.values(e.docs||{}).join("\n\n---\n\n"), `${e.company.replace(/\s+/g,'-').toLowerCase()}-application.pdf`)}>
+                      Download PDF
                     </button>
                     {e.contact!=="No email found" && (
                       <a href={`mailto:${e.contact}?subject=${encodeURIComponent(e.job)}&body=${encodeURIComponent(e.docs?.coverLetter||e.docs?.pitchEmail||e.docs?.submission||"")}`}
@@ -574,7 +652,17 @@ function App() {
                 </div>
                 {docKeys.map(({k,label}) => e.docs?.[k] && (
                   <div key={k} style={{marginBottom:"10px"}}>
-                    <div style={{fontSize:"9px",color:modeColor,letterSpacing:"1px",marginBottom:"4px",textTransform:"uppercase"}}>{label}</div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}}>
+                      <span style={{fontSize:"9px",color:modeColor,letterSpacing:"1px",textTransform:"uppercase"}}>{label}</span>
+                      <div style={{display:"flex",gap:"4px"}}>
+                        <button style={{...btn("sm"),fontSize:"9px",padding:"2px 7px"}} onClick={() => copy(e.docs[k],"out"+k+e.id)}>
+                          {copyMsg["out"+k+e.id]?"✓":"Copy"}
+                        </button>
+                        <button style={{...btn("sm"),fontSize:"9px",padding:"2px 7px",border:"1px solid #d4a84366",color:"#d4a843"}} onClick={() => downloadAsPdf(e.docs[k], `${label.replace(/\s+/g,'-').toLowerCase()}-${e.company.replace(/\s+/g,'-').toLowerCase()}.pdf`)}>
+                          PDF
+                        </button>
+                      </div>
+                    </div>
                     <pre style={{background:"#0a0a18",border:"1px solid #1a1a2e",borderRadius:"5px",padding:"10px",color:"#ddd8cc",fontSize:"11px",lineHeight:"1.6",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"'Courier New',monospace",maxHeight:"120px",overflowY:"auto",margin:0}}>
                       {e.docs[k]}
                     </pre>
