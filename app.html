@@ -105,7 +105,7 @@ const searchJobs = async (filters, mode) => {
     const params = new URLSearchParams({
       query, location: filters.location || "United States",
       remote: filters.workType.includes("Remote") ? "true" : "false",
-      date_posted: "month", page: "1"
+      date_posted: "month", page: "1", mode
     });
     if (filters.jobType.length) params.append("employment_type", filters.jobType[0].toUpperCase().replace("-","_"));
     
@@ -421,6 +421,29 @@ function App() {
               <Chip label="Ethnicity" options={CASTING_ETHNICITY} selected={filters.castingEthnicity} onToggle={v=>toggleFilter("castingEthnicity",v)} color="#5aaa8a"/>
               <Chip label="Compensation" options={CASTING_COMPENSATION} selected={filters.castingCompensation} onToggle={v=>toggleFilter("castingCompensation",v)} color="#8a7ad4"/>
             </>}
+            {mode === MODES.UGC && (
+              <div style={{marginTop:"14px"}}>
+                <div style={{fontSize:"9px",color:"#e07ad4",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"6px"}}>Also Post On</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:"4px"}}>
+                  {[
+                    {label:"Billo",url:"https://billo.app"},
+                    {label:"Collabstr",url:"https://collabstr.com"},
+                    {label:"Insense",url:"https://insense.pro"},
+                    {label:"JoinBrands",url:"https://joinbrands.com"},
+                    {label:"Upwork",url:"https://upwork.com"},
+                    {label:"Aspire",url:"https://aspire.io"},
+                    {label:"Creator.co",url:"https://creator.co"},
+                    {label:"Fiverr",url:"https://fiverr.com"},
+                  ].map(p => (
+                    <a key={p.label} href={p.url} target="_blank" rel="noreferrer" style={{
+                      padding:"3px 8px",borderRadius:"20px",fontSize:"9px",fontWeight:"700",
+                      border:"1px solid #e07ad444",color:"#e07ad4",background:"#e07ad411",
+                      textDecoration:"none",cursor:"pointer"
+                    }}>{p.label} ↗</a>
+                  ))}
+                </div>
+              </div>
+            )}
             <div style={{marginTop:"16px"}}>
               <button style={{...btn("primary"),width:"100%",marginBottom:"6px"}} onClick={runSearch} disabled={searching}>
                 {searching ? "Searching..." : `Search ${mode===MODES.TALENT?"Castings":mode===MODES.UGC?"Brand Deals":"Jobs"}`}
