@@ -357,9 +357,9 @@ function App() {
           {[{m:MODES.JOB,label:"💼 Jobs",color:"#d4a843"},{m:MODES.UGC,label:"🎯 UGC",color:"#e07ad4"},{m:MODES.TALENT,label:"🎬 Casting",color:"#8a7ad4"}].map(({m,label,color}) => (
             <button key={m} onClick={() => { setMode(m); setJobs([]); setSelectedJob(null); }} style={{
               padding:"5px 12px",borderRadius:"5px",
-              border:`1px solid ${mode===m ? color : color+"66"}`,
-              background: mode===m ? color+"30" : color+"15",
-              color: mode===m ? color : color+"bb",
+              border:`1px solid ${mode===m ? color : "#1a1a2e"}`,
+              background: mode===m ? "#06060f" : "#06060fcc",
+              color: mode===m ? color : "#aaaacc",
               fontSize:"11px",fontWeight:"700",cursor:"pointer",fontFamily:"inherit"
             }}>{label}</button>
           ))}
