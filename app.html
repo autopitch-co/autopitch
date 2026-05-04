@@ -181,7 +181,7 @@ const generateDocs = async (job, profile, mode) => {
 function Chip({ label, options, selected, onToggle, color = "#d4a843" }) {
   return (
     <div>
-      <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>{label}</div>
+      <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"5px",marginTop:"14px"}}>{label}</div>
       <div style={{display:"flex",flexWrap:"wrap",gap:"4px"}}>
         {options.map(o => (
           <span key={o} onClick={() => onToggle(o)} style={{
@@ -381,15 +381,15 @@ function App() {
         {view === VIEWS.SEARCH && <>
           {/* Sidebar */}
           <div style={{width:"240px",minWidth:"240px",background:"#0a0a18",borderRight:"1px solid #1a1a2e",padding:"14px",overflowY:"auto"}}>
-            <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"10px"}}>Filters</div>
-            <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"10px"}}>Keywords</div>
+            <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"10px"}}>Filters</div>
+            <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"5px",marginTop:"10px"}}>Keywords</div>
             <input style={{width:"100%",padding:"7px 10px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}
               placeholder={mode===MODES.TALENT?"actor, commercial...":mode===MODES.UGC?"fitness, UGC, creator...":"NIL, BD, marketing..."}
               value={filters.keywords} onChange={e => setFilters(f=>({...f,keywords:e.target.value}))}
               onKeyDown={e => e.key==="Enter" && runSearch()}
             />
             {mode === MODES.JOB && <>
-              <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Location</div>
+              <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"5px",marginTop:"14px"}}>Location</div>
               <input style={{width:"100%",padding:"7px 10px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}
                 placeholder="City, State or Remote" value={filters.location} onChange={e => setFilters(f=>({...f,location:e.target.value}))} />
               <Chip label="Work Type" options={WORK_TYPES} selected={filters.workType} onToggle={v=>toggleFilter("workType",v)} color="#5aaa8a"/>
@@ -550,14 +550,14 @@ function App() {
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
                 {[["name","Full Name"],["email","Email"]].map(([k,l]) => (
                   <div key={k}>
-                    <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"10px"}}>{l}</div>
+                    <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"5px",marginTop:"10px"}}>{l}</div>
                     <input style={{width:"100%",padding:"8px 10px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}} value={profile[k]} onChange={e=>setProfile(p=>({...p,[k]:e.target.value}))} placeholder={l}/>
                   </div>
                 ))}
               </div>
 
               {mode === MODES.JOB && <>
-                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Short Bio</div>
+                <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"5px",marginTop:"14px"}}>Short Bio</div>
                 <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={2} value={profile.bio} onChange={e=>setProfile(p=>({...p,bio:e.target.value}))} placeholder="2-3 sentence professional summary..."/>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:"14px",marginBottom:"5px"}}>
                   <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase"}}>Master Resume *</div>
@@ -575,20 +575,20 @@ function App() {
               {mode === MODES.UGC && <>
                 {[["handle","Primary Handle (@)"],["rate","Base Rate / Campaign"]].map(([k,l]) => (
                   <div key={k}>
-                    <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>{l}</div>
+                    <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"5px",marginTop:"14px"}}>{l}</div>
                     <input style={{width:"100%",padding:"8px 10px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}} value={profile[k]||""} onChange={e=>setProfile(p=>({...p,[k]:e.target.value}))} placeholder={l}/>
                   </div>
                 ))}
-                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Creator Bio</div>
+                <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"5px",marginTop:"14px"}}>Creator Bio</div>
                 <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={3} value={profile.bio} onChange={e=>setProfile(p=>({...p,bio:e.target.value}))} placeholder="Who you are, your niche, why brands love working with you..."/>
-                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Media Kit / Stats</div>
+                <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"5px",marginTop:"14px"}}>Media Kit / Stats</div>
                 <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={4} value={profile.mediaKit||""} onChange={e=>setProfile(p=>({...p,mediaKit:e.target.value}))} placeholder={"Avg engagement: 4.2%\nPast partners: Nike, Red Bull\nMonthly reach: 2.3M..."}/>
               </>}
 
               {mode === MODES.TALENT && <>
-                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Union Status</div>
+                <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"5px",marginTop:"14px"}}>Union Status</div>
                 <input style={{width:"100%",padding:"8px 10px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}} value={profile.union} onChange={e=>setProfile(p=>({...p,union:e.target.value}))} placeholder="SAG-AFTRA, Non-Union, Eligible"/>
-                <div style={{fontSize:"9px",color:"#ddd8cc",letterSpacing:"2px",textTransform:"uppercase",color:"#d4a843",marginBottom:"5px",marginTop:"14px"}}>Bio / Type / Special Skills</div>
+                <div style={{fontSize:"9px",color:"#d4a843",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"5px",marginTop:"14px"}}>Bio / Type / Special Skills</div>
                 <textarea style={{width:"100%",padding:"8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"11px",fontFamily:"'Courier New',monospace",outline:"none",resize:"vertical",boxSizing:"border-box",lineHeight:"1.6"}} rows={3} value={profile.bio} onChange={e=>setProfile(p=>({...p,bio:e.target.value}))} placeholder="Type, range, special skills, training, languages..."/>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:"14px",marginBottom:"5px"}}>
                   <div style={{fontSize:"9px",color:"#8a7ad4",letterSpacing:"2px",textTransform:"uppercase"}}>Acting Resume</div>
