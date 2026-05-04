@@ -200,7 +200,12 @@ function Chip({ label, options, selected, onToggle, color = "#d4a843" }) {
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 function App() {
   const [mode, setMode] = useState(() => localStorage.getItem('ap_mode') || MODES.JOB);
-  const [view, setView] = useState(VIEWS.SEARCH);
+  const [view, setView] = useState(() => {
+    const saved = localStorage.getItem('ap_profile');
+    const p = saved ? JSON.parse(saved) : null;
+    const hasProfile = p && (p.resume || p.bio || p.actingResume || p.mediaKit);
+    return hasProfile ? VIEWS.SEARCH : VIEWS.PROFILE;
+  });
   const [profile, setProfile] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ap_profile') || 'null') || { name:"", email:"", resume:"", bio:"", handle:"", rate:"", mediaKit:"", actingResume:"", union:"" }; }
     catch { return { name:"", email:"", resume:"", bio:"", handle:"", rate:"", mediaKit:"", actingResume:"", union:"" }; }
@@ -364,7 +369,7 @@ function App() {
 
       {/* NAV */}
       <div style={{display:"flex",background:"#0a0a18",borderBottom:"1px solid #1a1a2e",padding:"0 20px"}}>
-        {[{v:VIEWS.SEARCH,label:"Search"},{v:VIEWS.PROFILE,label:"Profile"},{v:VIEWS.QUEUE,label:`Queue (${queue.length})`},{v:VIEWS.OUTREACH,label:`Outreach (${outreach.length})`}].map(n => (
+        {[{v:VIEWS.PROFILE,label:"1. Profile"},{v:VIEWS.SEARCH,label:"2. Search"},{v:VIEWS.QUEUE,label:`3. Queue (${queue.length})`},{v:VIEWS.OUTREACH,label:`4. Outreach (${outreach.length})`}].map(n => (
           <button key={n.v} onClick={() => setView(n.v)} style={{
             padding:"10px 16px",background:"none",border:"none",
             borderBottom:`2px solid ${view===n.v ? "#d4a843" : "transparent"}`,
@@ -461,6 +466,12 @@ function App() {
 
           {/* Detail Panel */}
           <div style={{flex:1,overflowY:"auto",padding:"20px"}}>
+            {!(profile.resume || profile.bio || profile.actingResume || profile.mediaKit) && (
+              <div style={{background:"#1a1000",border:"1px solid #d4a84366",borderRadius:"7px",padding:"10px 14px",marginBottom:"16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px"}}>
+                <span style={{fontSize:"11px",color:"#f0c060"}}>⚠ Profile is empty — AI will generate generic documents. Add your info for tailored results.</span>
+                <button style={{...btn("sm"),border:"1px solid #d4a843",color:"#d4a843",fontSize:"10px",whiteSpace:"nowrap"}} onClick={()=>setView(VIEWS.PROFILE)}>Fill Profile →</button>
+              </div>
+            )}
             {!selectedJob ? (
               <div style={{textAlign:"center",padding:"80px 0",color:"#ddd8cc",fontSize:"12px"}}>Select an opportunity</div>
             ) : <>
