@@ -4,10 +4,6 @@ export default async function handler(req, res) {
   const { job, profile, mode } = req.body;
   if (!job || !profile) return res.status(400).json({ error: 'Missing data' });
 
-  // Log key presence (not the value)
-  console.log('GROK_API_KEY present:', !!process.env.GROK_API_KEY);
-  console.log('GROK_API_KEY length:', process.env.GROK_API_KEY?.length);
-
   const systemPrompts = {
     ugc: `You are a top UGC talent manager. Write compelling, personalized outreach for creators.
 Output ONLY a raw JSON object with exactly two keys: 'pitchEmail' and 'mediaKitSummary'.
@@ -44,61 +40,85 @@ Target job — ${job.title} at ${job.company}.
 Job description: ${(job.fullDescription || job.description || '').slice(0, 1500)}`
   };
 
-  try {
-    const response = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GROK_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'grok-3-latest',
-        messages: [
-          { role: 'system', content: systemPrompts[mode] || systemPrompts.job },
-          { role: 'user', content: userContent[mode] || userContent.job }
-        ],
-        max_tokens: 3000,
-        temperature: 0.4
-      })
-    });
+  const systemPrompt = systemPrompts[mode] || systemPrompts.job;
+  const userPrompt = userContent[mode] || userContent.job;
 
-    const responseText = await response.text();
-    console.log('Grok status:', response.status);
-    console.log('Grok response preview:', responseText.slice(0, 300));
-
-    if (!response.ok) {
-      return res.status(500).json({ 
-        success: false, 
-        error: `Grok API error ${response.status}`,
-        details: responseText.slice(0, 500)
-      });
-    }
-
-    const data = JSON.parse(responseText);
-    const raw = data.choices?.[0]?.message?.content || '';
-    console.log('Raw content:', raw.slice(0, 200));
-
-    // Clean and parse JSON
+  const parseResponse = (raw, m) => {
     let clean = raw.replace(/```json|```/gi, '').trim();
-    // Find JSON object in response
     const jsonMatch = clean.match(/\{[\s\S]*\}/);
     if (jsonMatch) clean = jsonMatch[0];
-
-    let docs;
-    try {
-      docs = JSON.parse(clean);
-    } catch(e) {
-      // Fallback - wrap raw in appropriate keys
-      const m = mode || 'job';
-      docs = m === 'ugc' ? { pitchEmail: raw, mediaKitSummary: '' }
+    try { return JSON.parse(clean); }
+    catch(e) {
+      return m === 'ugc' ? { pitchEmail: raw, mediaKitSummary: '' }
            : m === 'talent' ? { submission: raw, pitchEmail: '' }
            : { resume: raw, coverLetter: '' };
     }
+  };
 
-    return res.status(200).json({ success: true, docs });
+  // Try Claude (Anthropic) first
+  if (process.env.ANTHROPIC_API_KEY) {
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 3000,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        })
+      });
 
-  } catch (error) {
-    console.error('Generate error:', error.message);
-    return res.status(500).json({ success: false, error: error.message });
+      if (response.ok) {
+        const data = await response.json();
+        const raw = data.content?.[0]?.text || '';
+        console.log('Claude success, raw preview:', raw.slice(0, 100));
+        return res.status(200).json({ success: true, docs: parseResponse(raw, mode || 'job'), provider: 'claude' });
+      }
+      console.error('Claude failed:', response.status, await response.text().then(t => t.slice(0, 200)));
+    } catch(e) {
+      console.error('Claude error:', e.message);
+    }
   }
+
+  // Grok fallback
+  if (process.env.GROK_API_KEY) {
+    try {
+      const response = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.GROK_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'grok-3-latest',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          max_tokens: 3000,
+          temperature: 0.4
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const raw = data.choices?.[0]?.message?.content || '';
+        console.log('Grok success, raw preview:', raw.slice(0, 100));
+        return res.status(200).json({ success: true, docs: parseResponse(raw, mode || 'job'), provider: 'grok' });
+      }
+      console.error('Grok failed:', response.status);
+    } catch(e) {
+      console.error('Grok error:', e.message);
+    }
+  }
+
+  return res.status(500).json({
+    success: false,
+    error: 'No AI provider available. Add ANTHROPIC_API_KEY or GROK_API_KEY in Vercel environment variables.'
+  });
 }
