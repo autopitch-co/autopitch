@@ -55,33 +55,31 @@ Job description: ${(job.fullDescription || job.description || '').slice(0, 1500)
     }
   };
 
-  // Try Claude (Anthropic) first
-  if (process.env.ANTHROPIC_API_KEY) {
+  // Google Gemini — free tier (1500 req/day, no credit card)
+  if (process.env.GEMINI_API_KEY) {
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 3000,
-          system: systemPrompt,
-          messages: [{ role: 'user', content: userPrompt }]
-        })
-      });
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+            generationConfig: { maxOutputTokens: 3000, temperature: 0.4 }
+          })
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
-        const raw = data.content?.[0]?.text || '';
-        console.log('Claude success, raw preview:', raw.slice(0, 100));
-        return res.status(200).json({ success: true, docs: parseResponse(raw, mode || 'job'), provider: 'claude' });
+        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        console.log('Gemini success');
+        return res.status(200).json({ success: true, docs: parseResponse(raw, mode || 'job'), provider: 'gemini' });
       }
-      console.error('Claude failed:', response.status, await response.text().then(t => t.slice(0, 200)));
+      console.error('Gemini failed:', response.status, await response.text().then(t => t.slice(0, 200)));
     } catch(e) {
-      console.error('Claude error:', e.message);
+      console.error('Gemini error:', e.message);
     }
   }
 
@@ -108,7 +106,7 @@ Job description: ${(job.fullDescription || job.description || '').slice(0, 1500)
       if (response.ok) {
         const data = await response.json();
         const raw = data.choices?.[0]?.message?.content || '';
-        console.log('Grok success, raw preview:', raw.slice(0, 100));
+        console.log('Grok success');
         return res.status(200).json({ success: true, docs: parseResponse(raw, mode || 'job'), provider: 'grok' });
       }
       console.error('Grok failed:', response.status);
@@ -119,6 +117,6 @@ Job description: ${(job.fullDescription || job.description || '').slice(0, 1500)
 
   return res.status(500).json({
     success: false,
-    error: 'No AI provider available. Add ANTHROPIC_API_KEY or GROK_API_KEY in Vercel environment variables.'
+    error: 'No AI provider available. Add GEMINI_API_KEY in Vercel environment variables (free at aistudio.google.com).'
   });
 }
