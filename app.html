@@ -78,7 +78,12 @@ const WORK_TYPES = ["Remote", "Hybrid", "On-Site"];
 const JOB_TYPES = ["Full-Time", "Part-Time", "Contract", "Freelance"];
 const INDUSTRIES = ["Sports & NIL", "Real Estate", "Business Development", "Marketing", "Media & Entertainment", "Finance", "Tech", "Consulting"];
 const UGC_NICHES = ["Lifestyle", "Sports & Fitness", "Tech & Gadgets", "Fashion & Beauty", "Food & Travel", "Gaming", "Finance", "Automotive", "Health & Wellness"];
-const CASTING_TYPES = ["Film", "TV", "Commercial", "Theater", "Voice Acting", "Modeling", "Music Video", "Digital"];
+const CASTING_TYPES = ["Film", "TV", "Commercial", "Theater", "Voice Acting", "Modeling", "Music Video", "Digital", "Web Series", "Student Film", "Reality TV", "Print"];
+const CASTING_UNION = ["SAG-AFTRA", "AEA", "Non-Union", "Union & Non-Union"];
+const CASTING_GENDER = ["Male", "Female", "Non-Binary", "Any"];
+const CASTING_ETHNICITY = ["Asian", "Black / African American", "Hispanic / Latino", "Middle Eastern", "Native American", "Pacific Islander", "South Asian", "White / Caucasian", "Multiracial", "Open"];
+const CASTING_COMPENSATION = ["Paid", "Deferred", "Copy/Credit/Meals", "Low Budget", "SAG Scale", "Student Film (Unpaid)"];
+const CASTING_ROLE_TYPE = ["Lead", "Supporting", "Day Player", "Background / Extra", "Featured Extra", "Recurring", "Series Regular", "Cameo"];
 
 // ── API CALLS ─────────────────────────────────────────────────────────────────
 
@@ -86,7 +91,17 @@ const searchJobs = async (filters, mode) => {
   try {
     let query = filters.keywords || "jobs";
     if (mode === MODES.UGC) query = `UGC creator ${filters.keywords || "brand deals content creator"}`;
-    if (mode === MODES.TALENT) query = `casting ${filters.keywords || "actor actress talent audition"}`;
+    if (mode === MODES.TALENT) {
+      const parts = ["casting", filters.keywords || "actor actress talent audition"];
+      if (filters.castingUnion.length) parts.push(filters.castingUnion.join(" "));
+      if (filters.castingGender.length && !filters.castingGender.includes("Any")) parts.push(filters.castingGender.join(" "));
+      if (filters.castingEthnicity.length && !filters.castingEthnicity.includes("Open")) parts.push(filters.castingEthnicity[0]);
+      if (filters.castingRoleType.length) parts.push(filters.castingRoleType.join(" "));
+      if (filters.castingCompensation.length) parts.push(filters.castingCompensation.includes("Paid") ? "paid" : "");
+      if (filters.castingType.length) parts.push(filters.castingType.join(" "));
+      if (filters.ageMin || filters.ageMax) parts.push(`age ${filters.ageMin||""}${filters.ageMin&&filters.ageMax?"-":""}${filters.ageMax||""}`);
+      query = parts.filter(Boolean).join(" ");
+    }
     const params = new URLSearchParams({
       query, location: filters.location || "United States",
       remote: filters.workType.includes("Remote") ? "true" : "false",
@@ -190,7 +205,7 @@ function App() {
     try { return JSON.parse(localStorage.getItem('ap_profile') || 'null') || { name:"", email:"", resume:"", bio:"", handle:"", rate:"", mediaKit:"", actingResume:"", union:"" }; }
     catch { return { name:"", email:"", resume:"", bio:"", handle:"", rate:"", mediaKit:"", actingResume:"", union:"" }; }
   });
-  const [filters, setFilters] = useState({ keywords:"", location:"", workType:[], jobType:[], industry:[], castingType:[] });
+  const [filters, setFilters] = useState({ keywords:"", location:"", workType:[], jobType:[], industry:[], castingType:[], castingUnion:[], castingGender:[], castingEthnicity:[], castingCompensation:[], castingRoleType:[], ageMin:"", ageMax:"" });
   const toggleFilter = (key, val) => setFilters(f => ({ ...f, [key]: f[key].includes(val) ? f[key].filter(x=>x!==val) : [...f[key], val] }));
 
   const [jobs, setJobs] = useState([]);
@@ -382,7 +397,25 @@ function App() {
               <Chip label="Industry" options={INDUSTRIES} selected={filters.industry} onToggle={v=>toggleFilter("industry",v)} color="#d4a843"/>
             </>}
             {mode === MODES.UGC && <Chip label="Niche" options={UGC_NICHES} selected={filters.industry} onToggle={v=>toggleFilter("industry",v)} color="#e07ad4"/>}
-            {mode === MODES.TALENT && <Chip label="Casting Type" options={CASTING_TYPES} selected={filters.castingType} onToggle={v=>toggleFilter("castingType",v)} color="#8a7ad4"/>}
+            {mode === MODES.TALENT && <>
+              <div style={{fontSize:"9px",letterSpacing:"2px",textTransform:"uppercase",color:"#8a7ad4",marginBottom:"5px",marginTop:"14px"}}>Location</div>
+              <input style={{width:"100%",padding:"7px 10px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}
+                placeholder="City, State" value={filters.location} onChange={e => setFilters(f=>({...f,location:e.target.value}))} />
+              <div style={{fontSize:"9px",letterSpacing:"2px",textTransform:"uppercase",color:"#8a7ad4",marginBottom:"5px",marginTop:"14px"}}>Age Range</div>
+              <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
+                <input style={{width:"100%",padding:"6px 8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}
+                  placeholder="Min" type="number" min="1" max="100" value={filters.ageMin} onChange={e => setFilters(f=>({...f,ageMin:e.target.value}))} />
+                <span style={{color:"#8888aa",fontSize:"11px"}}>–</span>
+                <input style={{width:"100%",padding:"6px 8px",background:"#0d0d1f",border:"1px solid #1a1a2e",borderRadius:"5px",color:"#ddd8cc",fontSize:"12px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}
+                  placeholder="Max" type="number" min="1" max="100" value={filters.ageMax} onChange={e => setFilters(f=>({...f,ageMax:e.target.value}))} />
+              </div>
+              <Chip label="Production Type" options={CASTING_TYPES} selected={filters.castingType} onToggle={v=>toggleFilter("castingType",v)} color="#8a7ad4"/>
+              <Chip label="Role Type" options={CASTING_ROLE_TYPE} selected={filters.castingRoleType} onToggle={v=>toggleFilter("castingRoleType",v)} color="#8a7ad4"/>
+              <Chip label="Union Status" options={CASTING_UNION} selected={filters.castingUnion} onToggle={v=>toggleFilter("castingUnion",v)} color="#d4a843"/>
+              <Chip label="Gender" options={CASTING_GENDER} selected={filters.castingGender} onToggle={v=>toggleFilter("castingGender",v)} color="#e07ad4"/>
+              <Chip label="Ethnicity" options={CASTING_ETHNICITY} selected={filters.castingEthnicity} onToggle={v=>toggleFilter("castingEthnicity",v)} color="#5aaa8a"/>
+              <Chip label="Compensation" options={CASTING_COMPENSATION} selected={filters.castingCompensation} onToggle={v=>toggleFilter("castingCompensation",v)} color="#8a7ad4"/>
+            </>}
             <div style={{marginTop:"16px"}}>
               <button style={{...btn("primary"),width:"100%",marginBottom:"6px"}} onClick={runSearch} disabled={searching}>
                 {searching ? "Searching..." : `Search ${mode===MODES.TALENT?"Castings":mode===MODES.UGC?"Brand Deals":"Jobs"}`}
