@@ -4,5 +4,8 @@
       "path": "/api/send-email-sequence",
       "schedule": "0 14 * * *"
     }
+  ],
+  "rewrites": [
+    { "source": "/vendor", "destination": "/vendor.html" }
   ]
 }
