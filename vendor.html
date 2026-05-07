@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vendor Inquiry — The Pop-Up</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #111111;
+    --gray-dark: #444444;
+    --gray: #888888;
+    --gray-light: #cccccc;
+    --border: #e5e5e5;
+    --bg: #ffffff;
+    --bg-off: #f7f7f7;
+    --accent: #111111;
+    --red: #cc3333;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--black);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    background: var(--black);
+    color: white;
+    text-align: center;
+    padding: 10px 24px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* HEADER */
+  header {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 64px 24px 48px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 7vw, 60px);
+    font-weight: 900;
+    color: var(--black);
+    line-height: 1.05;
+    margin-bottom: 16px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: var(--gray-dark);
+    line-height: 1.7;
+    max-width: 500px;
+    margin-bottom: 32px;
+    font-weight: 300;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 0;
+    flex-wrap: wrap;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    width: fit-content;
+  }
+
+  .meta-item {
+    padding: 14px 24px;
+    border-right: 1px solid var(--border);
+  }
+
+  .meta-item:last-child { border-right: none; }
+
+  .meta-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-bottom: 3px;
+  }
+
+  .meta-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--black);
+  }
+
+  /* MAIN */
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* PRICING TABLE */
+  .pricing-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+  }
+
+  .pricing-table th {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gray);
+    padding: 10px 16px;
+    text-align: left;
+    background: var(--bg-off);
+    border: 1px solid var(--border);
+  }
+
+  .pricing-table td {
+    padding: 16px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+
+  .pricing-table tr:hover td { background: var(--bg-off); }
+
+  .price-badge {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--black);
+    white-space: nowrap;
+  }
+
+  .spot-name {
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .spot-desc {
+    font-size: 12px;
+    color: var(--gray);
+    line-height: 1.5;
+  }
+
+  .badge-popular {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: var(--black);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 2px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .note {
+    font-size: 11px;
+    color: var(--gray);
+    line-height: 1.7;
+    margin-bottom: 48px;
+    padding: 14px 16px;
+    background: var(--bg-off);
+    border-left: 3px solid var(--black);
+  }
+
+  /* FORM */
+  .form-section {
+    margin-bottom: 40px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .form-grid .full { grid-column: 1 / -1; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--black);
+  }
+
+  label .req { color: var(--red); margin-left: 2px; }
+
+  .field-hint {
+    font-size: 10px;
+    color: var(--gray);
+    margin-top: -3px;
+  }
+
+  input, select, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--black);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 11px 13px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--gray-light);
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--black);
+  }
+
+  textarea { resize: vertical; min-height: 88px; line-height: 1.6; }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 13px center;
+    padding-right: 34px;
+    cursor: pointer;
+  }
+
+  select option { background: white; color: var(--black); }
+
+  /* CHECKBOX */
+  .check-group {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding-top: 2px;
+  }
+
+  .check-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--black);
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .check-label input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--black);
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 32px 0;
+  }
+
+  /* SUBMIT */
+  .submit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding-top: 8px;
+  }
+
+  .submit-note {
+    font-size: 11px;
+    color: var(--gray);
+    line-height: 1.7;
+    max-width: 340px;
+  }
+
+  .btn-submit {
+    padding: 13px 40px;
+    background: var(--black);
+    border: none;
+    border-radius: 3px;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+  }
+
+  .btn-submit:hover { opacity: 0.75; }
+  .btn-submit:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* SUCCESS */
+  .success-msg {
+    display: none;
+    background: var(--bg-off);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--black);
+    border-radius: 4px;
+    padding: 36px 28px;
+    text-align: center;
+    margin-top: 24px;
+  }
+
+  .success-msg h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .success-msg p {
+    font-size: 13px;
+    color: var(--gray-dark);
+    line-height: 1.7;
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--gray);
+    letter-spacing: 0.5px;
+  }
+
+  @media (max-width: 580px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .meta-row { width: 100%; }
+    .meta-item { flex: 1; min-width: 120px; }
+    .submit-row { flex-direction: column; align-items: stretch; }
+    .btn-submit { text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">Now accepting vendors &mdash; Every Saturday 9 AM &ndash; 2 PM</div>
+
+<header>
+  <div class="tag">Vendor Application</div>
+  <h1>The Pop-Up</h1>
+  <p class="subtitle">A weekly curated market featuring local makers, bakers, and brands. Limited spots. Apply below to secure yours.</p>
+  <div class="meta-row">
+    <div class="meta-item">
+      <div class="meta-label">Schedule</div>
+      <div class="meta-value">Every Saturday</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Hours</div>
+      <div class="meta-value">9 AM — 2 PM</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Location</div>
+      <div class="meta-value">Atlanta, GA</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Spots</div>
+      <div class="meta-value">Limited</div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- PRICING -->
+  <div class="section-title">Vendor Pricing</div>
+
+  <table class="pricing-table">
+    <thead>
+      <tr>
+        <th>Section</th>
+        <th>What's Included</th>
+        <th>Best For</th>
+        <th>Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <div class="spot-name">Section A &mdash; Shared Table</div>
+        </td>
+        <td>
+          <div class="spot-desc">Shared 6ft table, interior placement</div>
+        </td>
+        <td>
+          <div class="spot-desc">Jewelry, candles, art, small items</div>
+        </td>
+        <td><span class="price-badge">$50 / day</span></td>
+      </tr>
+      <tr>
+        <td>
+          <div class="spot-name">
+            Section B &mdash; Full Table
+            <span class="badge-popular">Popular</span>
+          </div>
+        </td>
+        <td>
+          <div class="spot-desc">Full 6ft solo table, high-traffic interior spot</div>
+        </td>
+        <td>
+          <div class="spot-desc">Baked goods, apparel, accessories</div>
+        </td>
+        <td><span class="price-badge">$65 / day</span></td>
+      </tr>
+      <tr>
+        <td>
+          <div class="spot-name">Section C &mdash; Corner / Premium</div>
+        </td>
+        <td>
+          <div class="spot-desc">Corner or front-of-store, max visibility + display space</div>
+        </td>
+        <td>
+          <div class="spot-desc">Apparel racks, large displays, statement vendors</div>
+        </td>
+        <td><span class="price-badge">$75 / day</span></td>
+      </tr>
+      <tr>
+        <td>
+          <div class="spot-name">Weekend Bundle</div>
+        </td>
+        <td>
+          <div class="spot-desc">Saturday + Sunday, same spot both days</div>
+        </td>
+        <td>
+          <div class="spot-desc">Regulars, max sales opportunity</div>
+        </td>
+        <td><span class="price-badge">$110 / wknd</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    Spots are not confirmed until payment is received. All fees are due before setup day. We curate vendors to ensure a great mix — applications are reviewed and we will follow up within 48 hours. Recurring vendors receive priority booking each week.
+  </div>
+
+  <!-- FORM -->
+  <div class="section-title">Your Information</div>
+
+  <form id="vendorForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST" novalidate>
+
+    <div class="form-section">
+      <div class="form-grid">
+
+        <div class="field">
+          <label>Your Name <span class="req">*</span></label>
+          <input type="text" name="name" placeholder="First and last name" required />
+        </div>
+
+        <div class="field">
+          <label>Business / Brand Name <span class="req">*</span></label>
+          <input type="text" name="business_name" placeholder="Your brand or shop name" required />
+        </div>
+
+        <div class="field">
+          <label>Email Address <span class="req">*</span></label>
+          <input type="email" name="email" placeholder="you@email.com" required />
+        </div>
+
+        <div class="field">
+          <label>Phone Number</label>
+          <input type="tel" name="phone" placeholder="(000) 000-0000" />
+        </div>
+
+        <div class="field">
+          <label>Instagram</label>
+          <input type="text" name="instagram" placeholder="@yourhandle" />
+        </div>
+
+        <div class="field">
+          <label>TikTok</label>
+          <input type="text" name="tiktok" placeholder="@yourhandle" />
+        </div>
+
+      </div>
+    </div>
+
+    <div class="divider full"></div>
+    <div class="section-title">Spot & Availability</div>
+
+    <div class="form-section">
+      <div class="form-grid">
+
+        <div class="field full">
+          <label>What do you sell? <span class="req">*</span></label>
+          <select name="product_type" required>
+            <option value="" disabled selected>Select a category</option>
+            <option>Baked Goods / Desserts</option>
+            <option>Apparel / Clothing</option>
+            <option>Hats / Accessories</option>
+            <option>Jewelry</option>
+            <option>Candles / Body Care</option>
+            <option>Art / Prints</option>
+            <option>Vintage / Thrifted / Curated</option>
+            <option>Food / Beverages</option>
+            <option>Plants / Florals</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label>Preferred Section <span class="req">*</span></label>
+          <select name="section" required>
+            <option value="" disabled selected>Select a spot</option>
+            <option>Section A — Shared Table ($50/day)</option>
+            <option>Section B — Full Table ($65/day)</option>
+            <option>Section C — Corner / Premium ($75/day)</option>
+            <option>Weekend Bundle — Sat + Sun ($110/weekend)</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label>Which day(s) are you interested in? <span class="req">*</span></label>
+          <div class="check-group">
+            <label class="check-label">
+              <input type="checkbox" name="days" value="Saturday" /> Saturday
+            </label>
+            <label class="check-label">
+              <input type="checkbox" name="days" value="Sunday" /> Sunday (coming soon)
+            </label>
+            <label class="check-label">
+              <input type="checkbox" name="days" value="Both days" /> Both days
+            </label>
+          </div>
+        </div>
+
+        <div class="field full">
+          <label>Are you looking to be a recurring weekly vendor?</label>
+          <select name="recurring">
+            <option value="" disabled selected>Select one</option>
+            <option>Yes, every weekend</option>
+            <option>A few times a month</option>
+            <option>Just trying it out for now</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-title">Additional Details</div>
+
+    <div class="form-section">
+      <div class="form-grid">
+
+        <div class="field full">
+          <label>Tell us about your display / setup</label>
+          <div class="field-hint">Describe what you bring, any power needs, how much space you need, etc.</div>
+          <textarea name="setup_info" placeholder="e.g. I use a 6ft table, bring my own signage, no power needed..."></textarea>
+        </div>
+
+        <div class="field full">
+          <label>Anything else you'd like us to know?</label>
+          <textarea name="other" placeholder="Questions, special requests, or anything else..."></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="submit-row">
+      <div class="submit-note">
+        We review all applications and follow up within 48 hours. Spots are first come, first served and confirmed upon payment.
+      </div>
+      <button type="submit" class="btn-submit" id="submitBtn">Submit Application</button>
+    </div>
+
+  </form>
+
+  <div class="success-msg" id="successMsg">
+    <h3>Application Received!</h3>
+    <p>We'll follow up within 48 hours to confirm your spot.<br />In the meantime, follow us on Instagram and TikTok for weekly updates.</p>
+  </div>
+
+</main>
+
+<footer>
+  &copy; 2026 The Pop-Up &mdash; All Rights Reserved
+</footer>
+
+<script>
+  const form = document.getElementById('vendorForm');
+  const btn = document.getElementById('submitBtn');
+  const success = document.getElementById('successMsg');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const data = new FormData(form);
+    const required = ['name', 'business_name', 'email', 'product_type', 'section'];
+
+    for (const field of required) {
+      if (!data.get(field) || !data.get(field).trim()) {
+        alert('Please fill in all required fields marked with *');
+        return;
+      }
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    try {
+      const res = await fetch(form.action, {
+        method: 'POST',
+        body: data,
+        headers: { Accept: 'application/json' }
+      });
+
+      if (res.ok) {
+        form.style.display = 'none';
+        success.style.display = 'block';
+        success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        throw new Error();
+      }
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'Submit Application';
+      alert('Something went wrong. Please try again or DM us directly.');
+    }
+  });
+</script>
+
+</body>
+</html>
