@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Off-Market Deal Engine — Bay Area Multifamily</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  #root {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: #0a0a0a;
+    font-family: 'Courier New', monospace;
+    color: #e8e0d0;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  #header {
+    border-bottom: 1px solid #2a2a2a;
+    padding: 20px 24px 16px;
+    flex-shrink: 0;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: #c8a96e;
+    border: 1px solid #c8a96e;
+    padding: 2px 8px;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    line-height: 1.1;
+    margin: 0 0 6px;
+    color: #f0e8d8;
+  }
+
+  .subtitle {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: #666;
+    margin: 0;
+  }
+
+  /* ── Chat area ── */
+  #chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  #chat-area::-webkit-scrollbar { width: 4px; }
+  #chat-area::-webkit-scrollbar-thumb { background: #2a2a2a; }
+
+  /* ── Empty state ── */
+  #empty-state { padding-top: 16px; }
+
+  .empty-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: #555;
+    margin-bottom: 16px;
+  }
+
+  .starters {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .starter-btn {
+    background: transparent;
+    border: 1px solid #2a2a2a;
+    color: #999;
+    padding: 10px 14px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.02em;
+    transition: border-color 0.15s, color 0.15s;
+    line-height: 1.4;
+  }
+
+  .starter-btn:hover { border-color: #c8a96e; color: #c8a96e; }
+
+  /* ── Bubbles ── */
+  .bubble { margin-bottom: 20px; max-width: 88%; }
+
+  .user-bubble {
+    margin-left: auto;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    padding: 12px 16px;
+  }
+
+  .ai-bubble {
+    margin-right: auto;
+    border-left: 2px solid #c8a96e;
+    padding-left: 16px;
+  }
+
+  .ai-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: #c8a96e;
+    margin-bottom: 8px;
+  }
+
+  .bubble-text {
+    font-size: 14px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* ── Loading dots ── */
+  .dots { display: flex; gap: 6px; align-items: center; height: 20px; }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    background: #c8a96e;
+    border-radius: 50%;
+    animation: pulse 1.2s infinite ease-in-out;
+    display: inline-block;
+  }
+
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes pulse {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+
+  /* ── Input area ── */
+  #input-area {
+    border-top: 1px solid #1e1e1e;
+    padding: 16px 24px 20px;
+    background: #0a0a0a;
+    flex-shrink: 0;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    max-width: 760px;
+    margin: 0 auto;
+    align-items: flex-end;
+  }
+
+  #chat-input {
+    flex: 1;
+    background: #111;
+    border: 1px solid #2a2a2a;
+    color: #e8e0d0;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    resize: none;
+    outline: none;
+    line-height: 1.5;
+    transition: border-color 0.15s;
+  }
+
+  #chat-input:focus { border-color: #3a3a3a; }
+  #chat-input::placeholder { color: #444; }
+
+  #send-btn {
+    background: #c8a96e;
+    border: none;
+    color: #0a0a0a;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 18px;
+    transition: opacity 0.15s;
+  }
+
+  #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .hint {
+    font-size: 10px;
+    color: #333;
+    letter-spacing: 0.1em;
+    margin-top: 8px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div id="root">
+
+  <div id="header">
+    <div class="badge">BAY AREA</div>
+    <h1>OFF-MARKET<br>DEAL ENGINE</h1>
+    <p class="subtitle">Oakland · Alameda · San Francisco · Multifamily</p>
+  </div>
+
+  <div id="chat-area">
+    <div id="empty-state">
+      <p class="empty-label">ASK ANYTHING. START HERE:</p>
+      <div class="starters">
+        <button class="starter-btn">Where do I get off-market multifamily lists for Oakland?</button>
+        <button class="starter-btn">What's the best script to call an absentee owner?</button>
+        <button class="starter-btn">How do I find probate leads in Alameda County?</button>
+        <button class="starter-btn">What makes a motivated seller in SF multifamily?</button>
+        <button class="starter-btn">How do I skip trace an owner from an address?</button>
+        <button class="starter-btn">What cap rates should I expect in Oakland vs SF?</button>
+        <button class="starter-btn">How do I qualify if a deal is worth pursuing?</button>
+        <button class="starter-btn">What should I say when an owner says they're not interested?</button>
+      </div>
+    </div>
+    <div id="bottom-anchor"></div>
+  </div>
+
+  <div id="input-area">
+    <div class="input-row">
+      <textarea
+        id="chat-input"
+        placeholder="Ask about lists, scripts, skip tracing, deal flow..."
+        rows="2"
+      ></textarea>
+      <button id="send-btn" disabled>➤</button>
+    </div>
+    <div class="hint">Enter to send · Shift+Enter for new line</div>
+  </div>
+
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are an expert off-market multifamily real estate advisor specializing in Oakland, Alameda, and San Francisco Bay Area markets. You help ISAs and investment brokers find, source, and produce off-market apartment deals (4+ units).
+
+Your expertise covers:
+- Where to get off-market lists (probate, tax delinquent, absentee owners, driving for dollars, etc.)
+- How to approach owners directly
+- Scripts and talk tracks for cold outreach
+- Skip tracing and data sources
+- Deal qualification criteria for Bay Area multifamily
+- Cap rates, typical pricing, and market context for Oakland/Alameda/SF
+- How to build a consistent pipeline
+- Common objections and how to handle them
+- What makes a motivated seller in this market
+
+Always be specific, tactical, and actionable. Reference real tools, real data sources, and real strategies used by top multifamily brokers. When asked about lists, name the actual sources. When asked about scripts, give actual word-for-word language. When asked about markets, give real Oakland/Alameda/SF context.
+
+Keep answers focused and practical. Use short paragraphs. Use bullet points when listing sources or steps. Be direct.`;
+
+const messages = [];
+let loading = false;
+
+const chatArea = document.getElementById('chat-area');
+const emptyState = document.getElementById('empty-state');
+const bottomAnchor = document.getElementById('bottom-anchor');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+
+function scrollToBottom() {
+  bottomAnchor.scrollIntoView({ behavior: 'smooth' });
+}
+
+function appendBubble(role, content) {
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ' + (role === 'user' ? 'user-bubble' : 'ai-bubble');
+
+  if (role === 'assistant') {
+    const label = document.createElement('div');
+    label.className = 'ai-label';
+    label.textContent = 'DEAL ENGINE';
+    bubble.appendChild(label);
+  }
+
+  const text = document.createElement('div');
+  text.className = 'bubble-text';
+  text.textContent = content;
+  bubble.appendChild(text);
+
+  chatArea.insertBefore(bubble, bottomAnchor);
+  return bubble;
+}
+
+function showLoading() {
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ai-bubble';
+  bubble.id = 'loading-bubble';
+
+  const label = document.createElement('div');
+  label.className = 'ai-label';
+  label.textContent = 'DEAL ENGINE';
+  bubble.appendChild(label);
+
+  const dots = document.createElement('div');
+  dots.className = 'dots';
+  dots.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+  bubble.appendChild(dots);
+
+  chatArea.insertBefore(bubble, bottomAnchor);
+  return bubble;
+}
+
+function updateSendBtn() {
+  sendBtn.disabled = loading || !chatInput.value.trim();
+}
+
+async function sendMessage(overrideText) {
+  const userText = overrideText || chatInput.value.trim();
+  if (!userText || loading) return;
+
+  chatInput.value = '';
+  updateSendBtn();
+
+  if (emptyState) emptyState.style.display = 'none';
+
+  messages.push({ role: 'user', content: userText });
+  appendBubble('user', userText);
+  scrollToBottom();
+
+  loading = true;
+  updateSendBtn();
+  const loadingBubble = showLoading();
+  scrollToBottom();
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: SYSTEM_PROMPT, messages }),
+    });
+
+    const data = await response.json();
+    const reply = data.content?.[0]?.text || 'No response.';
+    messages.push({ role: 'assistant', content: reply });
+
+    loadingBubble.remove();
+    appendBubble('assistant', reply);
+  } catch {
+    loadingBubble.remove();
+    const errText = 'Connection error. Try again.';
+    messages.push({ role: 'assistant', content: errText });
+    appendBubble('assistant', errText);
+  }
+
+  loading = false;
+  updateSendBtn();
+  scrollToBottom();
+}
+
+chatInput.addEventListener('input', updateSendBtn);
+
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+sendBtn.addEventListener('click', () => sendMessage());
+
+document.querySelectorAll('.starter-btn').forEach((btn) => {
+  btn.addEventListener('click', () => sendMessage(btn.textContent.trim()));
+});
+</script>
+</body>
+</html>
