@@ -6,6 +6,8 @@
     }
   ],
   "rewrites": [
-    { "source": "/vendor", "destination": "/vendor.html" }
+    { "source": "/vendor", "destination": "/vendor.html" },
+    { "source": "/RE", "destination": "/re.html" },
+    { "source": "/re", "destination": "/re.html" }
   ]
 }
