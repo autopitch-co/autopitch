@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Off-Market Deal Engine — Bay Area Multifamily</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -14,7 +15,7 @@
     flex-direction: column;
     height: 100vh;
     background: #0a0a0a;
-    font-family: 'Courier New', monospace;
+    font-family: 'Inter', sans-serif;
     color: #e8e0d0;
     overflow: hidden;
   }
@@ -48,7 +49,7 @@
   .subtitle {
     font-size: 11px;
     letter-spacing: 0.15em;
-    color: #666;
+    color: #888;
     margin: 0;
   }
 
@@ -71,7 +72,7 @@
   .empty-label {
     font-size: 10px;
     letter-spacing: 0.2em;
-    color: #555;
+    color: #777;
     margin-bottom: 16px;
   }
 
@@ -89,13 +90,16 @@
     text-align: left;
     cursor: pointer;
     font-size: 13px;
-    font-family: 'Courier New', monospace;
+    font-family: 'Inter', sans-serif;
     letter-spacing: 0.02em;
     transition: border-color 0.15s, color 0.15s;
     line-height: 1.4;
   }
 
   .starter-btn:hover { border-color: #c8a96e; color: #c8a96e; }
+
+  /* brighter starter text */
+  .starter-btn { color: #b0b0b0; }
 
   /* ── Bubbles ── */
   .bubble { margin-bottom: 20px; max-width: 88%; }
@@ -170,7 +174,7 @@
     color: #e8e0d0;
     padding: 12px 14px;
     font-size: 14px;
-    font-family: 'Courier New', monospace;
+    font-family: 'Inter', sans-serif;
     resize: none;
     outline: none;
     line-height: 1.5;
@@ -178,7 +182,7 @@
   }
 
   #chat-input:focus { border-color: #3a3a3a; }
-  #chat-input::placeholder { color: #444; }
+  #chat-input::placeholder { color: #666; }
 
   #send-btn {
     background: #c8a96e;
@@ -199,7 +203,7 @@
 
   .hint {
     font-size: 10px;
-    color: #333;
+    color: #555;
     letter-spacing: 0.1em;
     margin-top: 8px;
     text-align: center;
